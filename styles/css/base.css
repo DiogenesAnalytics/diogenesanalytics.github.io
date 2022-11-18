@@ -155,4 +155,12 @@ text-align: right;
   a:visited{
     color: #E4E6EB;
   }
+
+  p > .hili_ref{
+    color: #8899A6;
+  }
+
+  p > .hili_ref:hover{
+    color: #800080;
+  }
 }
