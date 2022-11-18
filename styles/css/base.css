@@ -122,3 +122,37 @@ text-align: left;
 .header p:last-child{
 text-align: right;
 }
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #181818;
+  }
+
+  .footer{
+    background-color: #22303C;
+  }
+
+  p{
+    color: #E4E6EB;
+  }
+
+  p > a{
+    color: #E4E6EB;
+  }
+
+  p > a:hover{
+    color: #800080;
+  }
+
+  a{
+    color: #E4E6EB;
+  }
+
+  a:hover{
+    color: #800080;
+  }
+
+  a:visited{
+    color: #E4E6EB;
+  }
+}
