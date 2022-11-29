@@ -2,6 +2,7 @@ h1, h2, h3, h4, h5, p {
   font-weight: normal;
   font-style: normal;
   margin:0;
+  color: #E4E6EB;
 }
 
 html{
@@ -25,19 +26,12 @@ li {
   list-style: none;
   padding: 0;
   margin: 0;
+  color: #E4E6EB;
 }
 
 a{
   color: #E4E6EB;
   text-decoration: none;
-}
-
-a:hover{
-  color: #800080;
-}
-
-a:visited{
-  color: #E4E6EB;
 }
 
 p{
@@ -46,18 +40,29 @@ p{
   color: #E4E6EB;
 }
 
+a:visited,
 p > a{
   color: #E4E6EB;
 }
 
-p > a:hover{
-  color: #800080;
-}
-
-p > .hili_ref{
+li > .hili_ref,
+p > .hili_ref,
+p > .hili_ref:visited{
   color: #8899A6;
 }
 
+li > .fn_ref,
+p > .fn_ref,
+li > .fn_ref:visited,
+li > .fn_ref:hover,
+p > .fn_ref:visited,
+p > .fn_ref:hover {
+  color: #FEC260;
+}
+
+a:hover,
+p > a:hover,
+li > .hili_ref:hover,
 p > .hili_ref:hover{
   color: #800080;
 }
@@ -65,9 +70,8 @@ p > .hili_ref:hover{
 h2{
   font-size: 18px;
   line-height: 1.3em;
-  color: black;
+  color: #E4E6EB;
 }
-
 
 body{
   display: grid;
@@ -78,7 +82,6 @@ body{
   scroll-behavior: smooth;
   background: #181818;
 }
-
 
 /*-----------------------FOOTER-----------------------*/
 .arrow{
