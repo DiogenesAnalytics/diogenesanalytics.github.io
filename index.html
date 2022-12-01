@@ -53,6 +53,33 @@
           width: 100%;
         }
       }
+
+      @media screen and (max-height: 450px) {
+        body {
+          grid-template-rows: auto;
+        }
+
+        .intro{
+          grid-column: 3 /span 11;
+          grid-row: 5;
+        }
+
+        .quote{
+          font-size: 14px;
+          text-align: center;
+          line-height: 2em;
+        }
+
+        .reference{
+          font-size: 10px;
+          text-align: center;
+          line-height: 2em;
+        }
+
+        .footer-left{
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
