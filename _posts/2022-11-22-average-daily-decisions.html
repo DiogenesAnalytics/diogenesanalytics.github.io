@@ -1,14 +1,8 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/favicon/site.webmanifest">
-    <title>Diogenes Analytics | Blog Article </title>
-    <link rel="stylesheet" href="../styles/css/base.css">
+---
+layout: default
+title: Average Daily Decisions - Binary Everywhere
+custom_css: article.css
+---
     <script>
       // for showing massive 2**35000 number on button click
       function toggle_number_visibility() {
@@ -34,96 +28,6 @@
         }
       }
     </script>
-    <style>
-      h1 {
-        color: #A7D129;
-        font-family: "Courier";
-        text-align: center;
-      }
-      
-      h2 {
-        color: #A7D129;
-        font-family: "Courier";
-      }
-
-      textarea {
-        color: #F35F0E;
-        background: #181818;
-        border-color: #8899A6;
-        border-style: none;
-        font-family: "Courier", monospace;
-        max-width: 100%;
-        width: 100%;
-        white-space: pre-line;
-      }
-
-      button {
-        background: #181818;
-        border-color: #8899A6;
-        border-style: solid;
-        color: #8899A6;
-        cursor: pointer;
-        display: block;
-        font-size: 1rem;
-        font-family: "Courier", monospace;
-        margin: 5px auto;
-        padding: 4px 8px 4px;
-        text-align: center;
-      }
-      
-      button:hover {
-        border-color: #800080;
-        color: #800080;
-      }
-
-      figure {
-        color:  #F35F0E;
-        text-align: center;
-      }
-      
-      #references {
-        padding-left: 3em;
-        text-indent: -3em;
-        text-align: left;
-      }
-      
-      .content-scroll{
-        grid-column: 6/span 5;
-        height: 70vh;
-        overflow-x: hidden;
-        padding: 1em;
-      }
-
-      .article{
-        text-align: justify;
-      }
-      
-      @media screen and (max-width: 1100px) {
-        .content-scroll{
-          grid-column: 1/span 16;
-          height: 70vh;
-          overflow-x: hidden;
-          padding: 1em;
-        }
-
-        .article{
-          grid-column: 1/span 16;
-          margin-bottom: 1.3em;
-          text-align: left;
-        }
-
-        .footer-left{
-          width: 100%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="header">
-        <p><a href="../index.html">Diogenes Analytics</a></p>
-        <p><a href="../blog.html">Blog</a></p>
-        <p><a href="../about.html">Information</a></p>
-    </header>
     <div class="content-scroll">
       <div class="article">
         <h1>Average Daily Decisions: <br> Binary Everywhere</h1>
@@ -160,12 +64,12 @@
         <p>
           If we assume the simplest case, where each decision has only two
           options and is hence binary (i.e yes/no, stay/leave, etc...), then by
-          evaluating <b>2<sup>35000</sup></b> we can calculate all possible 
-          combinations of <em>average daily 
-          decisions</em>.<a class="fn_ref" href="#fn1"><sup id="ref1">1</sup></a> 
-          This turns out to be quite trivial in 
+          evaluating <b>2<sup>35000</sup></b> we can calculate all possible
+          combinations of <em>average daily
+          decisions</em>.<a class="fn_ref" href="#fn1"><sup id="ref1">1</sup></a>
+          This turns out to be quite trivial in
           <em>Python</em> but the number generated is massive (<em>click below
-          to view 
+          to view
           it</em>):<a class="fn_ref" href="#fn2"><sup id="ref2">2</sup></a>
         </p>
         <br><br>
@@ -184,7 +88,7 @@
         <p>
           This number has <b>10,537 digits</b> and represents all possible
           combinations of average daily (<em>binary</em>) decisions. Because
-          each decision is binary, then the combination of decisions can be 
+          each decision is binary, then the combination of decisions can be
           represented as a binary number, where the
           <a class="hili_ref"
              target="_blank"
@@ -205,35 +109,35 @@
         <br>
         <figure>
           <pre>
-{}               
-├── 0            
-│   ├── 0        
-│   │   ├── 0    
-│   │   │   ├── 0
-│   │   │   └── 1
-│   │   └── 1    
-│   │       ├── 0
-│   │       └── 1
-│   └── 1        
-│       ├── 0    
-│       │   ├── 0
-│       │   └── 1
-│       └── 1    
-│           ├── 0
-│           └── 1
-└── 1            
-    ├── 0        
-    │   ├── 0    
+    {}
+    ├── 0
+    │   ├── 0
+    │   │   ├── 0
+    │   │   │   ├── 0
+    │   │   │   └── 1
+    │   │   └── 1
+    │   │       ├── 0
+    │   │       └── 1
+    │   └── 1
+    │       ├── 0
+    │       │   ├── 0
+    │       │   └── 1
+    │       └── 1
+    │           ├── 0
+    │           └── 1
+    └── 1
+    ├── 0
+    │   ├── 0
     │   │   ├── 0
     │   │   └── 1
-    │   └── 1    
+    │   └── 1
     │       ├── 0
     │       └── 1
-    └── 1        
-        ├── 0    
+    └── 1
+        ├── 0
         │   ├── 0
         │   └── 1
-        └── 1    
+        └── 1
             ├── 0
             └── 1
           </pre>
@@ -241,23 +145,23 @@
         <br>
         <p>
           The binary tree shown above depicts all the possible binary numbers of
-          bit-length 4.<a class="fn_ref" href="#fn3"><sup id="ref3">3</sup></a> 
-          At the root of the tree is the <em>empty set</em>: 
+          bit-length 4.<a class="fn_ref" href="#fn3"><sup id="ref3">3</sup></a>
+          At the root of the tree is the <em>empty set</em>:
           <b>{}</b>. This represents the initial state where no decisions have
-          been made yet. As we begin to move down the tree, each branch 
+          been made yet. As we begin to move down the tree, each branch
           represents a choice (in this case either <b>0</b> or <b>1</b>).
-          If we follow the path to the end of the tree, making our 
-          <em>binary decisions</em> as we go, we eventually arrive at a unique 
+          If we follow the path to the end of the tree, making our
+          <em>binary decisions</em> as we go, we eventually arrive at a unique
           combination: <b>0000</b>, <b>0001</b>, <b>0010</b>, <b>0011</b>, etc...
-          So each path through the tree represents a unique combination of 
-          decisions. That combination forms a unique binary number with values 
-          from [<b>0</b>, <b>2<sup>4</sup></b> - <b>1</b>]. 
+          So each path through the tree represents a unique combination of
+          decisions. That combination forms a unique binary number with values
+          from [<b>0</b>, <b>2<sup>4</sup></b> - <b>1</b>].
         </p>
         <br>
         <p>
           As stated earlier, assuming the simplest case of two options to choose
-          from (i.e. <em>binary</em>), then each unique combination of 
-          <b>35,000</b> decisions has a unique number in the range 
+          from (i.e. <em>binary</em>), then each unique combination of
+          <b>35,000</b> decisions has a unique number in the range
           [<b>0</b>, <b>2<sup>35000</sup></b> - <b>1</b>]. And there are
           <b>2<sup>35000</sup></b> or <b>10,537</b> of these unique numbers,
           and hence unique paths. So the number <b>2</b> represents some path
@@ -269,11 +173,11 @@
         <h2>Closing</h2>
         <br>
         <p>
-          Binary numbers have a powerful role to play in a wide variety of 
-          applications. Whenever the problem involves some <em>binary</em> 
-          component (e.g. binary decisions), you can rest assured that 
-          binary numbers have some 
-          relevance.<a class="fn_ref" href="#fn4"><sup id="ref4">4</sup></a> 
+          Binary numbers have a powerful role to play in a wide variety of
+          applications. Whenever the problem involves some <em>binary</em>
+          component (e.g. binary decisions), you can rest assured that
+          binary numbers have some
+          relevance.<a class="fn_ref" href="#fn4"><sup id="ref4">4</sup></a>
           The math depicted here, while assuming the ideal situation where each
           decision is binary, offers us an example of how binary numbers can be
           used in modeling combination problems in a very compact, and elegant
@@ -319,24 +223,9 @@
                  (Nathan solves math problem X+Y)
               </a>
             </li>
-          </ul>          
+          </ul>
         </div>
         <!-- extra space at bottom -->
         <br><br><br><br>
       </div>
     </div>
-    <div class="footer">
-    	<div class="footer-left">
-    		<p>All rights reserved © 2021 - <span id="year"></span></p>
-    	</div>
-    	<div class="footer-right">
-    	</div>
-    </div>
-  </body>
-  <script>
-    // get new date object
-    var dt = new Date();
-    // update copyright range to most recent year
-    document.getElementById('year').innerHTML = dt.getFullYear();
-  </script>
-</html>

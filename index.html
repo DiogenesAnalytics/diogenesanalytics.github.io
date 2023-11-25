@@ -1,93 +1,8 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/favicon/site.webmanifest">
-    <title>Diogenes Analytics | Home</title>
-    <link href="styles/css/base.css" rel="stylesheet">
-    <style>
-      body{
-        grid-template-rows: repeat(6, 6fr var(--margin-grid)) var(--margin-border);
-      }
-
-      .intro{
-        grid-column: 6/span 5;
-        grid-row: 6;
-      }
-
-      .quote{
-        font-size: 22px;
-        text-align: center;
-        line-height: 2em;
-      }
-
-      .reference{
-        font-size: 14px;
-        text-align: center;
-        line-height: 2em;
-      }
-
-      @media screen and (max-width: 900px) {
-        .intro{
-          grid-column: 3 /span 11;
-          grid-row: 5;
-        }
-
-        .quote{
-          font-size: 14px;
-          text-align: center;
-          line-height: 2em;
-        }
-
-        .reference{
-          font-size: 10px;
-          text-align: center;
-          line-height: 2em;
-        }
-
-        .footer-left{
-          width: 100%;
-        }
-      }
-
-      @media screen and (max-height: 450px) {
-        body {
-          grid-template-rows: auto;
-        }
-
-        .intro{
-          grid-column: 3 /span 11;
-          grid-row: 5;
-        }
-
-        .quote{
-          font-size: 14px;
-          text-align: center;
-          line-height: 2em;
-        }
-
-        .reference{
-          font-size: 10px;
-          text-align: center;
-          line-height: 2em;
-        }
-
-        .footer-left{
-          width: 100%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="header">
-          <p><a href="index.html">Diogenes Analytics</a></p>
-          <p><a href="blog.html">Blog</a></p>
-          <p><a href="about.html">Information</a></p>
-    </header>
+---
+layout: default
+title: Diogenes Analytics | Home
+custom_css: index.css
+---
     <div class="intro">
       <p class="quote">
         “Problems well-defined are problems solved.”
@@ -96,18 +11,3 @@
         ~ <b>Raymond Hettinger</b>, <i>PyCon 2019</i>
       </p>
     </div>
-    <div class="footer">
-    	<div class="footer-left">
-    		<p>All rights reserved © 2021 - <span id="year"></span></p>
-    	</div>
-    	<div class="footer-right">
-    	</div>
-    </div>
-  </body>
-  <script>
-    // get new date object
-    var dt = new Date();
-    // update copyright range to most recent year
-    document.getElementById('year').innerHTML = dt.getFullYear();
-  </script>
-</html>
