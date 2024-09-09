@@ -99,7 +99,7 @@ OUTPUTFLS  := $(patsubst ${INTDR}/%.ipynb, ${PSTDR}/%.${OEXT}, ${NOTEBOOKS})
 JKLCTNR = jekyll.${DCTNR}
 JPTCTNR = jupyter.${DCTNR}
 JKYLIMG = jekyll/jekyll:4.2.0
-DCKRIMG = ghcr.io/diogenesanalytics/blog_template:master
+DCKRIMG = ghcr.io/diogenesanalytics/diogenesanalytics.github.io:master
 DCKRRUN = docker run --rm -v ${CURRENTDIR}:/home/jovyan -it ${DCKRIMG}
 DCKRBLD = docker build -t ${DCKRIMG} . --load
 
