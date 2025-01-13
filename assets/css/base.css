@@ -81,10 +81,12 @@ h2 {
 body {
     display: grid;
     font-family: "Courier", monospace;
-    grid-template-columns: var(--margin-border) var(--margin-grid) repeat(
+    grid-template-columns:
+        var(--margin-border) var(--margin-grid) repeat(
             6,
             6fr var(--margin-grid)
-        ) var(--margin-border);
+        )
+        var(--margin-border);
     margin: 0;
     padding: 0;
     scroll-behavior: smooth;
@@ -137,6 +139,18 @@ body {
 }
 
 /* -----------------------HEADER-----------------------*/
+.social-media-links a {
+    text-decoration: none;
+    color: #e4e6eb;
+    margin: 0 8px;
+    font-size: 24px;
+    transition: color 0.3s ease;
+}
+
+.social-media-links a:hover {
+    color: #800080;
+}
+
 .header {
     grid-column: 2 / span 13;
     display: table;
