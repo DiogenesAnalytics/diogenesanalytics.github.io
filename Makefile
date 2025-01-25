@@ -1,7 +1,7 @@
 .PHONY: all build-jupyter jupyter execute convert sync jekyll build-site \
         pause address containers commit push publish list-containers \
         stop-containers restart-containers unsync clear-nb clear-output \
-        clear-jekyll clean update-times reset
+        clear-jekyll clean update-times reset print-config
 
 # Usage:
 # make                    # execute and convert all Jupyter notebooks
@@ -28,6 +28,7 @@
 # make clean              # combines all clearing commands into one
 # make update-times       # update timestamps to now
 # make reset              # WARNING: completely reverses all changes
+# make print-config       # print info on variables used
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -332,3 +333,17 @@ update-times:
 
 # reset to original state undoing all changes
 reset: unsync clean
+
+# print info on variables used
+print-config:
+	@echo "GitHub User: $(GITHUB_USER)"
+	@echo "Repository Name: $(REPO_NAME)"
+	@echo "Git Branch: $(GIT_BRANCH)"
+	@echo "Docker Image: $(DCKRIMG)"
+	@echo "Docker Tag: $(DCKRTAG)"
+	@echo "Current Directory: $(CURRENTDIR)"
+	@echo "Jupyter Docker Container: $(JPTCTNR)"
+	@echo "Jekyll Docker Container: $(JKLCTNR)"
+	@echo "Output Directory: $(OUTDR)"
+	@echo "Sync Directory: ${BASDR}/converted"
+	@echo "Pause Time (PSECS): $(PSECS)"

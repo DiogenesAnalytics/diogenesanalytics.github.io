@@ -132,3 +132,4 @@ command, simply run `make -n [COMMAND]`.
 + `clean`: combines all clearing commands into one
 + `update-times`: update timestamps to now
 + `reset`: [ *WARNING* ] reverses all changes prior to `commit` command
++ `print-config`: print info on variables used
