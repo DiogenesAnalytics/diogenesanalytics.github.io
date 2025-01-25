@@ -109,6 +109,7 @@ command, simply run `make -n [COMMAND]`.
 
 ### Commands
 + `all`: (*aka*: `make`) defaults to converting all UN-converted notebooks
++ `build-jupyter`: build jupyter Docker image
 + `jupyter`: launches the Jupyter notebook development Docker image
 + `execute`: execute all Jupyter notebooks (in place)
 + `convert`: convert all Jupyter notebooks (even if not changed)

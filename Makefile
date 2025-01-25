@@ -1,10 +1,11 @@
-.PHONY: all jupyter execute convert sync jekyll build-site pause address \
-        containers commit push publish list-containers stop-containers \
-        restart-containers unsync clear-nb clear-output clear-jekyll clean \
-				update-times reset
+.PHONY: all build-jupyter jupyter execute convert sync jekyll build-site \
+        pause address containers commit push publish list-containers \
+        stop-containers restart-containers unsync clear-nb clear-output \
+		clear-jekyll clean update-times reset
 
 # Usage:
 # make                    # execute and convert all Jupyter notebooks
+# make build-jupyter      # build jupyter docker image
 # make jupyter            # startup Docker container running Jupyter server
 # make execute            # execute all Jupyter notebooks (in place)
 # make convert            # convert all Jupyter notebooks (even if not changed)
