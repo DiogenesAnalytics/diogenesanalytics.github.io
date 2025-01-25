@@ -1,7 +1,7 @@
 .PHONY: all build-jupyter jupyter execute convert sync jekyll build-site \
         pause address containers commit push publish list-containers \
         stop-containers restart-containers unsync clear-nb clear-output \
-		clear-jekyll clean update-times reset
+        clear-jekyll clean update-times reset
 
 # Usage:
 # make                    # execute and convert all Jupyter notebooks
@@ -96,11 +96,19 @@ CURRENTDIR := $(PWD)
 NOTEBOOKS  := $(shell find ${INTDR} -name "*.ipynb" -not -path "*/.ipynb_*/*")
 OUTPUTFLS  := $(patsubst ${INTDR}/%.ipynb, ${PSTDR}/%.${OEXT}, ${NOTEBOOKS})
 
+# dynamically retrieve the GitHub username, repository name, and branch
+GITHUB_USER ?= $(shell dirname `git config --get remote.origin.url` | \
+                 sed 's/\:/ /g' | awk '{print $$2}' | cut -d/ -f1 | \
+                 tr '[:upper:]' '[:lower:]')
+REPO_NAME ?= $(shell basename -s .git `git config --get remote.origin.url`)
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+
 # docker-related variables
 JKLCTNR = jekyll.${DCTNR}
 JPTCTNR = jupyter.${DCTNR}
 JKYLIMG = jekyll/jekyll:4.2.0
-DCKRIMG = ghcr.io/diogenesanalytics/blog_template:master
+DCKRTAG ?= $(GIT_BRANCH)
+DCKRIMG ?= ghcr.io/$(GITHUB_USER)/$(REPO_NAME):$(DCKRTAG)
 DCKRRUN = docker run --rm -v ${CURRENTDIR}:/home/jovyan -it ${DCKRIMG}
 DCKRBLD = docker build -t ${DCKRIMG} . --load
 
