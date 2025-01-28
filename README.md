@@ -5,33 +5,34 @@ A template for building a blog, written in Jupyter Notebooks, and using Jekyll.
 
 ## Project Organization
 ```
-├── _includes        <- Where page-specific CSS files are stored.
+├── _includes            <- Where page-specific CSS files are stored.
 ├── _jupyter
-│   ├── notebooks    <- Jupyter notebooks for conversion are stored here.
-│   └── templates    <- Where nbconvert templates are stored.
+│   ├── notebooks        <- Jupyter notebooks for conversion are stored here.
+│   └── templates        <- Where nbconvert templates are stored.
 │
 ├── _layouts
-│   ├── article.html <- Jekyll template defining articles.
-│   └── default.html <- Jekyll "base" template used in all other templates.
+│   ├── article.html     <- Jekyll template defining articles.
+│   └── default.html     <- Jekyll "base" template used in all other templates.
 │
-├── _posts           <- Where Jekyll markdown posts are stored.
-│
+├── _posts               <- Where Jekyll markdown posts are stored.
 ├── assets
-│   ├── css          <- Where the "base" CSS file is stored.
-│   └── images       <- Where image files are stored.
+│   ├── css              <- Where the "base" CSS file is stored.
+│   └── images           <- Where image files are stored.
 │
+├── favicon              <- Where favicon files are stored.
 ├── pages
-│   └── blog.html    <- Jekyll template defining the blog page.
-│
-├── favicon          <- Where favicon files are stored.
-├── .dockerignore    <- Ignore list for building Docker image.
-├── .gitignore       <- Ignore list for Git repo.
-├── pages            <- Where pages (i.e. non-post files) are stored.
-├── _config.yml      <- The config file for Jekyll.
-├── Dockerfile       <- Builds the Docker image used in the Makefile.
-├── index.html       <- Jekyll template defining the home/index page.
-├── Makefile         <- Makefile with commands like `make build-site`.
-└── README.md        <- The top-level README for developers using this project.
+│   └── blog.html        <- Jekyll template defining the blog page.
+|
+├── tests
+|   └── requirements.txt <- Dependencies for running tests.
+|
+├── .dockerignore        <- Ignore list for building Docker image.
+├── .gitignore           <- Ignore list for Git repo.
+├── _config.yml          <- The config file for Jekyll.
+├── Dockerfile           <- Builds the Docker image used in the Makefile.
+├── index.html           <- Jekyll template defining the home/index page.
+├── Makefile             <- Makefile with commands like `make build-site`.
+└── README.md            <- The top-level README for this project.
 ```
 
 ## Configuration
@@ -109,7 +110,15 @@ command, simply run `make -n [COMMAND]`.
 
 ### Commands
 + `all`: (*aka*: `make`) defaults to converting all UN-converted notebooks
-+ `build-jupyter`: build jupyter Docker image
++ `check-docker`: check Docker and host dependencies
++ `check-image-jupyter`: check if the Jupyter Docker image exists
++ `check-image-tests`: check if the Test Docker image exists
++ `check-images`: check all docker images
++ `check-deps-jupyter`: check Jupyter dependencies inside Docker
++ `check-deps-tests`: check test dependencies inside Docker
++ `check-all`: check all dependencies (Docker, Jupyter, Tests)
++ `build-jupyter`: build Jupyter Docker image
++ `build-tests`: build test Docker image
 + `jupyter`: launches the Jupyter notebook development Docker image
 + `execute`: execute all Jupyter notebooks (in place)
 + `convert`: convert all Jupyter notebooks (even if not changed)
@@ -131,5 +140,13 @@ command, simply run `make -n [COMMAND]`.
 + `clear-jekyll`: removes Jekyll _site/ directory
 + `clean`: combines all clearing commands into one
 + `update-times`: update timestamps to now
-+ `reset`: [ *WARNING* ] reverses all changes prior to `commit` command
++ `reset`: [ *WARNING* ] reverses all changes
 + `print-config`: print info on variables used
++ `lint`: run linters (isort, black, flake8, mypy)
++ `tests`: run full testing suite (pytest, lint)
++ `pytest`: run pytest in Docker container
++ `isort`: run isort in Docker container
++ `black`: run black in Docker container
++ `flake8`: run flake8 in Docker container
++ `mypy`: run mypy in Docker container
++ `shell`: create interactive shell in Docker container

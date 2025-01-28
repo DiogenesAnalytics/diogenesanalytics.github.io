@@ -10,3 +10,4 @@ exclude:
   - Dockerfile
   - Makefile
   - README.md
+  - tests
