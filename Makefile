@@ -231,6 +231,7 @@ check-deps-tests: check-image-tests
 	  command -v bash > /dev/null || (echo 'bash is missing' && exit 1) && \
 	  command -v find > /dev/null || (echo 'find is missing' && exit 1) && \
 	  command -v git > /dev/null || (echo 'git is missing' && exit 1) && \
+		command -v make > /dev/null || (echo 'make is missing' && exit 1) && \
 	  command -v rsync > /dev/null || (echo 'rsync is missing' && exit 1) && \
 	  command -v jupyter > /dev/null || (echo 'jupyter is missing' && exit 1) && \
 	  command -v pytest > /dev/null || (echo 'pytest is missing' && exit 1) && \
