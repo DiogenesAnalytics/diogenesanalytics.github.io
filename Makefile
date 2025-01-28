@@ -129,14 +129,29 @@ GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 JKLCTNR = jekyll.${DCTNR}
 JPTCTNR = jupyter.${DCTNR}
 JKYLIMG = jekyll/jekyll:4.2.0
-DCKRUSR = --user 1000:1000
+DCKRUSR = 1000:1000
 DCKRSRC = /usr/local/src/$(REPO_NAME)
 DCKRRUN = docker run --rm -v ${CURRENTDIR}:/home/jovyan -it
-DCKRTST = docker run --rm ${DCKRUSR} -v ${CURRENTDIR}:${DCKRSRC} -it
+DCKRTST = docker run --rm --user ${DCKRUSR} -v ${CURRENTDIR}:${DCKRSRC} -it
 DCKRTAG ?= $(GIT_BRANCH)
+DCKR_PULL ?= true
+DCKR_NOCACHE ?= false
 DCKRIMG_BASE ?= ghcr.io/$(GITHUB_USER)/$(REPO_NAME):$(DCKRTAG)
 DCKRIMG_JPYTR ?= ${DCKRIMG_BASE}_jupyter
 DCKRIMG_TESTS ?= ${DCKRIMG_BASE}_testing
+
+# Define the docker build command with optional --no-cache
+define DOCKER_BUILD
+	docker build -t $1 . --load --target $2 \
+	  $(if $(filter true,$(DCKR_NOCACHE)),--no-cache)
+endef
+
+# Function to conditionally pull or build the docker image
+define DOCKER_PULL_OR_BUILD
+	$(if $(filter true,$(DCKR_PULL)), \
+	  docker pull $1 || (echo "Pull failed. Building Docker image for $1..." && \
+	  $(call DOCKER_BUILD,$1,$2)), $(call DOCKER_BUILD,$1,$2))
+endef
 
 # check for conditional vars to turn off docker
 ifdef NODOCKER
@@ -146,6 +161,8 @@ ifdef NODOCKER
   undefine DCKRTAG
   undefine DCKRIMG_JPYTR
   undefine DCKRIMG_TESTS
+  undefine DOCKER_BUILD
+  undefine DOCKER_PULL_OR_BUILD
 endif
 
 # jupyter nbconvert vars
@@ -229,19 +246,15 @@ check-deps-tests: check-image-tests
 check-all: check-docker-images check-deps-jupyter check-deps-tests
 	@ echo "All dependencies have been checked successfully!"
 
-# build jupyter docker image with pull fallback
+# build jupyter docker image with conditional pull and build
 build-jupyter:
-	@ echo "Attempting to pull Jupyter Docker image..."
-	@ docker pull ${DCKRIMG_JPYTR} || \
-	  ( echo "Pull failed. Building Jupyter Docker image..." && \
-	    docker build -t ${DCKRIMG_JPYTR} . --load --target jupyter )
+	@ echo "Building Jupyter Docker image..."
+	@ $(call DOCKER_PULL_OR_BUILD,${DCKRIMG_JPYTR},jupyter)
 
-# build testing docker image with pull fallback
+# build testing docker image with conditional pull and build
 build-tests:
-	@ echo "Attempting to pull Test Docker image..."
-	@ docker pull ${DCKRIMG_TESTS} || \
-	  ( echo "Pull failed. Building Test Docker image..." && \
-	    docker build -t ${DCKRIMG_TESTS} . --load --target testing )
+	@ echo "Building Test Docker image..."
+	@ $(call DOCKER_PULL_OR_BUILD,${DCKRIMG_TESTS},testing)
 
 # launch jupyter notebook development docker image
 jupyter:
