@@ -149,4 +149,7 @@ command, simply run `make -n [COMMAND]`.
 + `black`: run black in Docker container
 + `flake8`: run flake8 in Docker container
 + `mypy`: run mypy in Docker container
++ `install-act`: install act command
++ `check-act`: check if act is installed
++ `run-act-tests`: run GitHub action tests locally
 + `shell`: create interactive shell in Docker container

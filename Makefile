@@ -4,7 +4,7 @@
         address containers commit push publish list-containers stop-containers \
         restart-containers unsync clear-nb clear-output clear-jekyll clean \
         update-times reset print-config lint tests pytest isort black flake8 \
-        mypy shell
+        mypy install-act check-act run-act-tests shell
 
 
 # Usage:
@@ -48,6 +48,9 @@
 # make black               # run black in docker container
 # make flake8              # run flake8 in docker container
 # make mypy                # run mypy in docker container
+# make install-act         # # install act command
+# make check-act           # check if act is installed
+# make run-act-tests       # run github action tests locally
 # make shell               # create interactive shell in docker container
 
 
@@ -494,6 +497,27 @@ flake8:
 mypy:
 	@ ${DCKRTST} ${DCKRIMG_TESTS} mypy --strict --warn-unreachable --pretty \
 	--show-column-numbers --show-error-context --ignore-missing-imports tests/
+
+# install act command
+install-act:
+	@ echo "Installing act..."
+	@ curl --proto '=https' --tlsv1.2 -sSf \
+	  "https://raw.githubusercontent.com/nektos/act/master/install.sh" | \
+	  sudo bash -s -- -b ./bin && \
+	sudo mv ./bin/act /usr/local/bin/
+	@ echo "act installed and moved to /usr/local/bin"
+
+# check if act is installed
+check-act:
+	@ command -v act >/dev/null 2>&1 || \
+	{ echo "Command 'act' is not installed. Please install it with: "\
+	"'make install-act'" \
+	"bash'"; exit 1; }
+
+# run github action tests locally
+run-act-tests: check-act
+	@ echo "Running GitHub Action Tests locally..."
+	act -j run-tests
 
 # create interactive shell in docker container
 shell:
