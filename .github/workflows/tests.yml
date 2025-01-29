@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  workflow_run:
+    workflows:
+      - "docker"
+    types:
+      - completed
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Tests Image
+        run: make build-tests
+
+      - name: Check Dependencies
+        run: make check-deps-tests
+
+      - name: Run Tests
+        run: make tests
