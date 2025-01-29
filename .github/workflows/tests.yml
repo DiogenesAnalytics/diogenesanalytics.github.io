@@ -20,7 +20,6 @@ jobs:
           echo "Git Remotes: "
           echo "$(git remote -v)"
           echo "GITHUB_USER: ${{ github.actor }}"
-          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
           echo "GITHUB_REPOSITORY: ${{ github.repository }}"
           echo "GITHUB_SHA: ${{ github.sha }}"
           echo "GITHUB_REF: ${{ github.ref }}"
