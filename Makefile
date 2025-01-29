@@ -484,7 +484,7 @@ isort:
 
 # run black in docker container
 black:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} black tests/
+	@ ${DCKRTST} ${DCKRIMG_TESTS} black --line-length 80 tests/
 
 # run flake8 in docker container
 flake8:
