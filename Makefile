@@ -114,7 +114,7 @@ RMVFLGS = ${RMTGS} ${RMCEL} ${RMNPT} ${RMIPT} ${RMOPT} ${RMWSP}
 CNVRSNFLGS = ${LGLFL} ${TMPFLGS} ${RMVFLGS}
 
 # notebook-related variables
-CURRENTDIR := $(PWD)
+CURRENTDIR := $(shell pwd)
 NOTEBOOKS  := $(shell find ${INTDR} -name "*.ipynb" -not -path "*/.ipynb_*/*")
 OUTPUTFLS  := $(patsubst ${INTDR}/%.ipynb, ${PSTDR}/%.${OEXT}, ${NOTEBOOKS})
 
