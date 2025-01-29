@@ -121,10 +121,21 @@ CURRENTDIR := $(shell pwd)
 NOTEBOOKS  := $(shell find ${INTDR} -name "*.ipynb" -not -path "*/.ipynb_*/*")
 OUTPUTFLS  := $(patsubst ${INTDR}/%.ipynb, ${PSTDR}/%.${OEXT}, ${NOTEBOOKS})
 
-# dynamically retrieve the GitHub username, repository name, and branch
-GITHUB_USER ?= $(shell dirname `git config --get remote.origin.url` | \
-                 sed 's/\:/ /g' | awk '{print $$2}' | cut -d/ -f1 | \
-                 tr '[:upper:]' '[:lower:]')
+# extract the github username from the remote URL (SSH or HTTPS)
+get_github_user = $(shell \
+    remote_url=$(1); \
+    if echo $$remote_url | grep -q "git@github.com"; then \
+	    dirname $$remote_url | sed 's/\:/ /g' | awk '{print $$2}' | \
+	    cut -d/ -f1 | tr '[:upper:]' '[:lower:]'; \
+    elif echo $$remote_url | grep -q "https://github.com"; then \
+	    echo $$remote_url | sed 's/https:\/\/github.com\/\([^\/]*\)\/.*/\1/' | \
+	    tr '[:upper:]' '[:lower:]'; \
+    else \
+        echo "Invalid remote URL" && exit 1; \
+    fi)
+
+# dynamically retrieve the github username, repository name, and branch
+GITHUB_USER = $(call get_github_user,$(shell git config --get remote.origin.url))
 REPO_NAME ?= $(shell basename -s .git `git config --get remote.origin.url`)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -518,6 +529,10 @@ check-act:
 run-act-tests: check-act
 	@ echo "Running GitHub Action Tests locally..."
 	act -j run-tests
+
+# Command to test with a custom remote URL passed as an argument
+test-github-user:
+	@ echo "$(call get_github_user,$(REMOTE_URL))"
 
 # create interactive shell in docker container
 shell:
