@@ -87,6 +87,42 @@ def test_github_info_matches_docker_images(
     assert expected_testing_image == testing_image
 
 
+def test_github_user_extraction_https() -> None:
+    """Test GitHub username extraction from HTTPS URL."""
+    # setup url
+    remote_url = "https://github.com/User_Name/repo_name.git"
+    result = run_make(
+        "test-github-user", extra_args=[f"REMOTE_URL={remote_url}"]
+    )
+
+    # check exit value
+    assert result.returncode == 0
+
+    # cleanup output
+    output = result.stdout.strip()
+
+    # check user name
+    assert output == "user_name"
+
+
+def test_github_user_extraction_ssh() -> None:
+    """Test GitHub username extraction from SSH URL."""
+    # setup url
+    remote_url = "git@github.com:User_Name/repo_name.git"
+    result = run_make(
+        "test-github-user", extra_args=[f"REMOTE_URL={remote_url}"]
+    )
+
+    # check exit value
+    assert result.returncode == 0
+
+    # cleaup output
+    output = result.stdout.strip()
+
+    # check user name
+    assert output == "user_name"
+
+
 def test_run_make_invalid_target() -> None:
     """Confirm missing target fails."""
     # run make on missing target
