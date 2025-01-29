@@ -492,7 +492,8 @@ flake8:
 
 # run mypy in docker container
 mypy:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} mypy --ignore-missing-imports tests/
+	@ ${DCKRTST} ${DCKRIMG_TESTS} mypy --strict --warn-unreachable --pretty \
+	--show-column-numbers --show-error-context --ignore-missing-imports tests/
 
 # create interactive shell in docker container
 shell:
