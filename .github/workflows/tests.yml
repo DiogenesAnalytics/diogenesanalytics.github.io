@@ -15,6 +15,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Check Git Credentials
+        run: |
+          echo "Git Remotes: "
+          echo "$(git remote -v)"
+          echo "Owner: ${{ github.repository }}"
+
       - name: Build Tests Image
         run: make build-tests
 
