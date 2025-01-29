@@ -15,11 +15,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Check Git Credentials
+      - name: Check GitHub Credentials
         run: |
           echo "Git Remotes: "
           echo "$(git remote -v)"
-          echo "Owner: ${{ github.repository }}"
+          echo "GITHUB_USER: ${{ github.actor }}"
+          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+          echo "GITHUB_REPOSITORY: ${{ github.repository }}"
+          echo "GITHUB_SHA: ${{ github.sha }}"
+          echo "GITHUB_REF: ${{ github.ref }}"
 
       - name: Build Tests Image
         run: make build-tests
