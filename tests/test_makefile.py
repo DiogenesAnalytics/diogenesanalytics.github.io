@@ -1,15 +1,19 @@
 """Tests for Makefile."""
 
 import subprocess
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
+import pytest
 from pytest import MonkeyPatch
 
 
 def run_make(
     target: str, dry_mode: bool = False, extra_args: Optional[List[str]] = None
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
     """Runs a Makefile target."""
     # initial command string
     command = ["make"]
@@ -32,6 +36,57 @@ def run_make(
     return result
 
 
+@pytest.fixture(scope="function")
+def print_config_output() -> Dict[str, str]:
+    """Fixture to get the output from the print-config target in Makefile."""
+    result = run_make("print-config")
+
+    # ensure the command ran successfully
+    assert result.returncode == 0
+
+    # parse the output from print-config and store as key-value pairs
+    config_data = {}
+    for line in result.stdout.splitlines():
+        # only process lines with a key-value format (e.g., key: value)
+        if ":" in line:
+            key, value = line.split(":", 1)
+            config_data[key.strip()] = value.strip()
+
+    return config_data
+
+
+def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
+    """Test that none of the values in the print-config output are empty."""
+    for value in print_config_output.values():
+        assert value != "", "One of the config values is empty!"
+
+
+def test_github_info_matches_docker_images(
+    print_config_output: Dict[str, str]
+) -> None:
+    """Test that GitHub user, repo name, and branch match the Docker images."""
+    # extract values
+    github_user = print_config_output["GitHub User"]
+    repo_name = print_config_output["Repository Name"]
+    git_branch = print_config_output["Git Branch"]
+
+    # rebuild the expected Docker image names
+    expected_jupyter_image = (
+        f"ghcr.io/{github_user}/{repo_name}:{git_branch}_jupyter"
+    )
+    expected_testing_image = (
+        f"ghcr.io/{github_user}/{repo_name}:{git_branch}_testing"
+    )
+
+    # extract the actual Docker images
+    jupyter_image = print_config_output["Docker Jupyter Image"]
+    testing_image = print_config_output["Docker Testing Image"]
+
+    # assert that the rebuilt Docker images match the ones in the output
+    assert expected_jupyter_image == jupyter_image
+    assert expected_testing_image == testing_image
+
+
 def test_run_make_invalid_target() -> None:
     """Confirm missing target fails."""
     # run make on missing target
@@ -46,8 +101,8 @@ def test_run_make_dry_mode(monkeypatch: MonkeyPatch) -> None:
     """Test the behavior of `run_make` with dry-run mode enabled."""
 
     def mock_subprocess_run(
-        command: List[str], *args, **kwargs
-    ) -> subprocess.CompletedProcess:
+        command: List[str], *args: Tuple[Any], **kwargs: Dict[str, Any]
+    ) -> subprocess.CompletedProcess[str]:
         """Mock function for subprocess.run to simulate command execution."""
         # check that "-n" (dry-run flag) is in the command list
         assert "-n" in command
@@ -69,8 +124,8 @@ def test_run_make_with_extra_args(monkeypatch: MonkeyPatch) -> None:
     """Test the `run_make` function with additional arguments."""
 
     def mock_subprocess_run(
-        command: List[str], *args, **kwargs
-    ) -> subprocess.CompletedProcess:
+        command: List[str], *args: Tuple[Any], **kwargs: Dict[str, Any]
+    ) -> subprocess.CompletedProcess[str]:
         """Mock function for subprocess.run to simulate command execution."""
         # check that the extra arguments are in the command list
         assert "--jobs" in command
@@ -82,3 +137,80 @@ def test_run_make_with_extra_args(monkeypatch: MonkeyPatch) -> None:
 
     # call run_make with extra_args set to ['--jobs', '4']
     run_make("build", extra_args=["--jobs", "4"])
+
+
+def test_check_docker_dry_run() -> None:
+    """Test `check-docker` make target executes the expected command."""
+    result = run_make("check-docker", dry_mode=True)
+
+    # verify that the expected command appears in the dry run output
+    assert "docker --version" in result.stdout
+    assert result.returncode == 0
+
+
+def test_build_jupyter_no_options() -> None:
+    """Test build-jupyter target without DCKR_PULL or DCKR_NOCACHE options."""
+    result = run_make("build-jupyter", dry_mode=True)
+
+    # Check that docker pull/build is in command, but no --no-cache flag
+    assert "docker pull" in result.stdout
+    assert "docker build" in result.stdout
+    assert "--no-cache" not in result.stdout
+
+
+def test_build_jupyter_with_nocache() -> None:
+    """Test the build-jupyter target with DCKR_NOCACHE option."""
+    result = run_make(
+        "build-jupyter", dry_mode=True, extra_args=["DCKR_NOCACHE=true"]
+    )
+
+    # Check that --no-cache flag is passed to docker build
+    assert "docker build" in result.stdout
+    assert "--no-cache" in result.stdout
+    assert "docker pull" in result.stdout
+
+
+def test_build_jupyter_with_no_pull() -> None:
+    """Test build-jupyter target with no DCKR_PULL."""
+    result = run_make(
+        "build-jupyter", dry_mode=True, extra_args=["DCKR_PULL=false"]
+    )
+
+    # check that docker pull not included in the output
+    assert "docker pull" not in result.stdout
+    assert "docker build" in result.stdout
+    assert "--no-cache" not in result.stdout
+
+
+def test_build_tests_no_options() -> None:
+    """Test build-tests target without DCKR_PULL or DCKR_NOCACHE options."""
+    result = run_make("build-tests", dry_mode=True)
+
+    # Check that docker pull/build is in command, but no --no-cache flag
+    assert "docker pull" in result.stdout
+    assert "docker build" in result.stdout
+    assert "--no-cache" not in result.stdout
+
+
+def test_build_tests_with_nocache() -> None:
+    """Test the build-tests target with DCKR_NOCACHE option."""
+    result = run_make(
+        "build-tests", dry_mode=True, extra_args=["DCKR_NOCACHE=true"]
+    )
+
+    # Check that --no-cache flag is passed to docker build
+    assert "docker build" in result.stdout
+    assert "--no-cache" in result.stdout
+    assert "docker pull" in result.stdout
+
+
+def test_build_tests_with_no_pull() -> None:
+    """Test build-tests target with no DCKR_PULL."""
+    result = run_make(
+        "build-tests", dry_mode=True, extra_args=["DCKR_PULL=false"]
+    )
+
+    # check that docker pull not included in the output
+    assert "docker pull" not in result.stdout
+    assert "docker build" in result.stdout
+    assert "--no-cache" not in result.stdout
