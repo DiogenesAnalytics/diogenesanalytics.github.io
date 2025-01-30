@@ -31,15 +31,8 @@ jobs:
       - name: Check Dependencies
         run: make check-deps-tests NOTTY=true
 
-      - name: Configure Safe Directory
-        run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          REPO_NAME="${REPO_NAME%.git}"
-          echo "REPO_NAME: ${REPO_NAME}"
-          make safe-repository SAFEGITDIR=/usr/local/src/${REPO_NAME}
-
       - name: Print Configuration
         run: make print-config NOTTY=true
 
       - name: Run Tests
-        run: make tests NOTTY=true
+        run: make tests NOTTY=true USE_VOL=false
