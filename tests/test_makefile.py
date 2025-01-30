@@ -36,6 +36,45 @@ def run_make(
     return result
 
 
+def get_git_remote_url() -> str:
+    """Helper function to get the remote URL of the repository."""
+    try:
+        # Run git command to get remote URL
+        remote_url = subprocess.check_output(
+            ["git", "config", "--get", "remote.origin.url"],
+            universal_newlines=True,
+        ).strip()
+
+        # check if empy
+        if not remote_url:
+            return (
+                "Missing `origin` remote URL: No URL set for remote 'origin'."
+            )
+
+        # normal
+        return remote_url
+
+    except subprocess.CalledProcessError:
+        # Check remotes if 'origin' is missing
+        try:
+            remotes_list = subprocess.check_output(
+                ["git", "remote", "-v"],
+                universal_newlines=True,
+            ).strip()
+
+            # no origin
+            return (
+                "Missing `origin` remote. " f"Available remotes: {remotes_list}"
+            )
+
+        except subprocess.CalledProcessError:
+            # no git repo
+            return (
+                "Error: Unable to fetch remote details. "
+                "Ensure you are inside a valid Git repository."
+            )
+
+
 @pytest.fixture(scope="function")
 def print_config_output() -> Dict[str, str]:
     """Fixture to get the output from the print-config target in Makefile."""
@@ -53,6 +92,24 @@ def print_config_output() -> Dict[str, str]:
             config_data[key.strip()] = value.strip()
 
     return config_data
+
+
+def test_git_remote_url() -> None:
+    """Test that the git remote URL is valid and accessible."""
+    remote_url = get_git_remote_url()
+
+    # Check that the remote URL is not empty or invalid
+    assert remote_url != "", "Git remote URL is empty!"
+
+    # Check that it does not mention "Missing" unless the origin is missing
+    assert (
+        "Missing" not in remote_url or "origin" not in remote_url
+    ), f"Unexpected missing remote: {remote_url}"
+
+    # Check that the URL contains 'github.com'
+    assert (
+        "github.com" in remote_url
+    ), f"Expected GitHub URL, but got: {remote_url}"
 
 
 def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
