@@ -28,7 +28,7 @@ jobs:
         run: make build-tests
 
       - name: Check Dependencies
-        run: make check-deps-tests
+        run: make check-deps-tests NOTTY=true
 
       - name: Run Tests
-        run: make tests
+        run: make tests NOTTY=true
