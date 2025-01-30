@@ -26,6 +26,9 @@ RUN apt-get update \
       unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Add the safe.directory config for Git
+RUN git config --global --add safe.directory '*'
+
 # download and install Google Chrome
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
