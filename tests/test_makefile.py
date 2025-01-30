@@ -58,7 +58,9 @@ def print_config_output() -> Dict[str, str]:
 def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
     """Test that none of the values in the print-config output are empty."""
     for value in print_config_output.values():
-        assert value != "", "One of the config values is empty!"
+        assert (
+            value != ""
+        ), f"One of the config values is empty! Output:\n {print_config_output}"
 
 
 def test_github_info_matches_docker_images(
