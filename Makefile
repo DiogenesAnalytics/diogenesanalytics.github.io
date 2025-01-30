@@ -409,6 +409,7 @@ publish: all check-git sync commit push
 
 # command to mark the repository as safe
 safe-repository: check-git
+	@ echo "Marking the repository as a safe directory: $(SAFEGITDIR)"
 	@ git config --global --add safe.directory $(SAFEGITDIR)
 
 # list all running containers

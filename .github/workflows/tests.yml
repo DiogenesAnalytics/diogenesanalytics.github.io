@@ -34,6 +34,8 @@ jobs:
       - name: Configure Safe Directory
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          REPO_NAME="${REPO_NAME%.git}"
+          echo "REPO_NAME: ${REPO_NAME}"
           make safe-repository SAFEGITDIR=/usr/local/src/${REPO_NAME}
 
       - name: Print Configuration
