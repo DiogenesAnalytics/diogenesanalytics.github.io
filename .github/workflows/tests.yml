@@ -25,10 +25,16 @@ jobs:
           echo "GITHUB_REF: ${{ github.ref }}"
 
       - name: Build Tests Image
+        if: ${{ env.SKIP_BUILD != 'true' }}
         run: make build-tests
 
       - name: Check Dependencies
         run: make check-deps-tests NOTTY=true
+
+      - name: Configure Safe Directory
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          make safe-repository SAFEGITDIR=/usr/local/src/${REPO_NAME}
 
       - name: Print Configuration
         run: make print-config NOTTY=true
