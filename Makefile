@@ -145,8 +145,9 @@ JPTCTNR = jupyter.${DCTNR}
 JKYLIMG = jekyll/jekyll:4.2.0
 DCKRUSR = 1000:1000
 DCKRSRC = /usr/local/src/$(REPO_NAME)
-DCKRRUN = docker run --rm -v ${CURRENTDIR}:/home/jovyan -it
-DCKRTST = docker run --rm --user ${DCKRUSR} -v ${CURRENTDIR}:${DCKRSRC} -it
+DCKRTTY := $(if $(filter true,$(NOTTY)),-i,-it)
+DCKRRUN = docker run --rm -v ${CURRENTDIR}:/home/jovyan ${DCKRTTY}
+DCKRTST = docker run --rm --user ${DCKRUSR} -v ${CURRENTDIR}:${DCKRSRC} ${DCKRTTY}
 DCKRTAG ?= $(GIT_BRANCH)
 DCKR_PULL ?= true
 DCKR_NOCACHE ?= false
@@ -241,7 +242,7 @@ check-deps-jupyter: check-image-jupyter
 # check testing dependencies inside docker
 check-deps-tests: check-image-tests
 	@ echo "Checking test dependencies inside Docker..."
-	@ ${DCKRRUN} ${DCKRIMG_TESTS} sh -c "\
+	@ ${DCKRTST} ${DCKRIMG_TESTS} sh -c "\
 	  command -v bash > /dev/null || (echo 'bash is missing' && exit 1) && \
 	  command -v find > /dev/null || (echo 'find is missing' && exit 1) && \
 	  command -v git > /dev/null || (echo 'git is missing' && exit 1) && \
