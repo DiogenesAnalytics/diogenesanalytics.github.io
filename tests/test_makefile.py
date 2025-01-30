@@ -184,6 +184,32 @@ def test_check_docker_dry_run() -> None:
     assert result.returncode == 0
 
 
+def test_check_deps_tests_without_notty_defined() -> None:
+    """Test that NOTTY is correctly handled when not set."""
+    result = run_make("check-deps-tests", dry_mode=True)
+    assert result.returncode == 0
+    assert "-it" in result.stdout  # Ensure -it is included
+
+
+def test_check_deps_tests_with_notty() -> None:
+    """Test that NOTTY is correctly handled in check-deps-tests."""
+    result = run_make(
+        "check-deps-tests", extra_args=["NOTTY=true"], dry_mode=True
+    )
+    assert result.returncode == 0
+    assert "-i" in result.stdout
+    assert "-it" not in result.stdout  # Ensure -it is not included
+
+
+def test_check_deps_tests_without_notty() -> None:
+    """Test that NOTTY is correctly handled when false."""
+    result = run_make(
+        "check-deps-tests", extra_args=["NOTTY=false"], dry_mode=True
+    )
+    assert result.returncode == 0
+    assert "-it" in result.stdout  # Ensure -it is included
+
+
 def test_build_jupyter_no_options() -> None:
     """Test build-jupyter target without DCKR_PULL or DCKR_NOCACHE options."""
     result = run_make("build-jupyter", dry_mode=True)
