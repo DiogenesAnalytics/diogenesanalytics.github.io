@@ -1,6 +1,7 @@
 """Tests for Makefile."""
 
 import subprocess
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -92,6 +93,12 @@ def print_config_output() -> Dict[str, str]:
             config_data[key.strip()] = value.strip()
 
     return config_data
+
+
+@pytest.fixture(scope="function")
+def current_directory(print_config_output: Dict[str, str]) -> Path:
+    """Fixture to get the current dir from print-config output."""
+    return Path(print_config_output["Current Directory"])
 
 
 def test_git_remote_url() -> None:
@@ -351,3 +358,42 @@ def test_build_tests_with_no_pull() -> None:
     assert "docker pull" not in result.stdout
     assert "docker build" in result.stdout
     assert "--no-cache" not in result.stdout
+
+
+def test_use_vol_default() -> None:
+    """Test that volume is mounted by default."""
+    # run the make command with default environment (USE_VOL=true)
+    result = run_make("pytest", dry_mode=True)
+
+    # assert that the expected flag "-v" is present in the result
+    assert result.returncode == 0
+    assert "-v" in result.stdout
+
+
+def test_use_vol_off(current_directory: Path) -> None:
+    """Test that volume is mounted by default."""
+    # run the make command with default environment (USE_VOL=true)
+    result = run_make("pytest", dry_mode=True, extra_args=["USE_VOL=false"])
+
+    # assert that the expected flag "-v" is present in the result
+    assert result.returncode == 0
+    assert "-v" not in result.stdout
+    assert str(current_directory) not in result.stdout
+
+
+def test_use_usr_default() -> None:
+    """Test that `--user` is enabled by default in the Makefile."""
+    # Run the make command with default environment (USE_USR=true)
+    result = run_make("pytest", dry_mode=True)
+
+    # Assert that the expected flag "-u" is present in the result
+    assert "--user" in result.stdout
+
+
+def test_use_usr_off() -> None:
+    """Test that `--user` is missing with USE_USR=false."""
+    # Run the make command with default environment (USE_USR=true)
+    result = run_make("pytest", dry_mode=True, extra_args=["USE_USR=false"])
+
+    # Assert that the expected flag "-u" is present in the result
+    assert "--user" not in result.stdout
