@@ -131,7 +131,7 @@ get_github_user = $(shell \
 	    echo $$remote_url | sed 's/https:\/\/github.com\/\([^\/]*\)\/.*/\1/' | \
 	    tr '[:upper:]' '[:lower:]'; \
     else \
-        echo "Invalid remote URL" && exit 1; \
+        echo "Invalid remote URL: $$remote_url" && exit 1; \
     fi)
 
 # dynamically retrieve the github username, repository name, and branch

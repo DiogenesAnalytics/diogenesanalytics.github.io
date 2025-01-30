@@ -92,7 +92,7 @@ def test_github_info_matches_docker_images(
 def test_github_user_extraction_https() -> None:
     """Test GitHub username extraction from HTTPS URL."""
     # setup url
-    remote_url = "https://github.com/User_Name/repo_name.git"
+    remote_url = "https://github.com/User_Name/repo_name"
     result = run_make(
         "test-github-user", extra_args=[f"REMOTE_URL={remote_url}"]
     )
@@ -123,6 +123,22 @@ def test_github_user_extraction_ssh() -> None:
 
     # check user name
     assert output == "user_name"
+
+
+def test_github_user_extraction_fails() -> None:
+    """Test GitHub username extraction from invalid URL."""
+    # setup url
+    remote_url = "foo://bar@github.com/user/repo.git"
+    result = run_make(
+        "test-github-user", extra_args=[f"REMOTE_URL={remote_url}"]
+    )
+
+    # cleaup output
+    output = result.stdout.strip()
+
+    # error output
+    assert "Invalid" in output
+    assert remote_url in output
 
 
 def test_run_make_invalid_target() -> None:
