@@ -128,9 +128,12 @@ command, simply run `make -n [COMMAND]`.
 + `pause`: pause PSECS (to pause between commands)
 + `address`: get Docker container address/port
 + `containers`: launch all Docker containers
++ `check-repo-safety`: check if safe dir is setup
++ `checkk-git`: check if Git is installed
 + `commit`: git add/commit all synced files
 + `push`: git push to remote branch
 + `publish`: [ *WARNING* ] convert, sync, commit, and push all at once
++ `safe-repository`: command to mark the repository as safe
 + `list-containers`: list all running containers
 + `stop-containers`: simply stops all running Docker containers
 + `restart-containers`: restart all containers

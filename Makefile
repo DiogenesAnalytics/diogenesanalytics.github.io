@@ -1,10 +1,11 @@
 .PHONY: all check-docker check-image-jupyter check-image-tests check-images \
         check-deps-jupyter check-deps-tests check-all build-jupyter \
         build-tests jupyter execute convert sync jekyll build-site pause \
-        address containers commit push publish list-containers stop-containers \
-        restart-containers unsync clear-nb clear-output clear-jekyll clean \
-        update-times reset print-config lint tests pytest isort black flake8 \
-        mypy install-act check-act run-act-tests shell
+        address containers check-repo-safety check-git commit push publish \
+        safe-repository list-containers stop-containers restart-containers \
+        unsync clear-nb clear-output clear-jekyll clean update-times reset \
+        print-config lint tests pytest isort black flake8 mypy install-act \
+        check-act run-act-tests shell
 
 
 # Usage:
@@ -27,9 +28,12 @@
 # make pause               # pause PSECS (to pause between commands)
 # make address             # get docker container address/port
 # make containers          # launch all docker containers
+# make check-safedir       # check if safe dir is setup
+# make check-git           # check if git is installed
 # make commit              # git add/commit all synced files
 # make push                # git push to remote branch
 # make publish             # WARNING: convert, sync, commit, and push at once
+# make safe-repository     # mark the repository as safe
 # make list-containers     # list all running containers
 # make stop-containers     # simply stops all running docker containers
 # make restart-containers  # restart all containers
@@ -118,6 +122,7 @@ CNVRSNFLGS = ${LGLFL} ${TMPFLGS} ${RMVFLGS}
 
 # notebook-related variables
 CURRENTDIR := $(shell pwd)
+SAFEGITDIR ?= $(CURRENTDIR)
 NOTEBOOKS  := $(shell find ${INTDR} -name "*.ipynb" -not -path "*/.ipynb_*/*")
 OUTPUTFLS  := $(patsubst ${INTDR}/%.ipynb, ${PSTDR}/%.${OEXT}, ${NOTEBOOKS})
 
@@ -371,8 +376,23 @@ address:
 # launch all docker containers
 containers: jupyter jekyll pause address
 
+# check if safe dir is setup
+check-repo-safety: check-git
+	@ git config --global --get-all safe.directory | grep -q "$(SAFEGITDIR)" \
+	  && echo "✅ Repository is already marked safe." \
+	  || echo "⚠️ Repository is NOT marked safe. Run 'make safe-repository'."
+
+# check if git is installed
+check-git:
+	@ if command -v git >/dev/null 2>&1; then \
+	  echo "✅ Git is installed."; \
+	else \
+	  echo "❌ Git is NOT installed. Please install Git to proceed."; \
+	  exit 1; \
+	fi
+
 # git add and git commit synced files
-commit:
+commit: check-git
 	@ echo "Adding and committing recently synced files to Git repository ..."
 	@ while read item; do \
 	  git add $$item; \
@@ -380,12 +400,16 @@ commit:
 	@ git commit -m "Adding new ${OFRMT} posts to repository."
 
 # git push branch to remote
-push:
+push: check-git
 	@ echo "Pushing Git commits to remote ${GITRM} on branch ${GITBR} ..."
 	@ git push ${GITRM} ${GITBR}
 
 # super command to convert, sync, commit, and push new jupyter posts
-publish: all sync commit push
+publish: all check-git sync commit push
+
+# command to mark the repository as safe
+safe-repository: check-git
+	@ git config --global --add safe.directory $(SAFEGITDIR)
 
 # list all running containers
 list-containers:
@@ -529,7 +553,7 @@ check-act:
 # run github action tests locally
 run-act-tests: check-act
 	@ echo "Running GitHub Action Tests locally..."
-	act -j run-tests
+	act -j run-tests $(ARGS)
 
 # Command to test with a custom remote URL passed as an argument
 test-github-user:
