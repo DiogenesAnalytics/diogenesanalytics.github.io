@@ -1,4 +1,5 @@
 [![docker](https://github.com/DiogenesAnalytics/blog_template/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/DiogenesAnalytics/blog_template/actions/workflows/docker-publish.yml)
+[![tests](https://github.com/DiogenesAnalytics/blog_template/actions/workflows/tests.yml/badge.svg)](https://github.com/DiogenesAnalytics/blog_template/actions/workflows/tests.yml)
 
 # Jekyll-Jupyter Blog Template
 A template for building a blog, written in Jupyter Notebooks, and using Jekyll.
