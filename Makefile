@@ -209,30 +209,39 @@ all: $(OUTPUTFLS)
 # check docker and host dependencies
 check-docker:
 	@ echo "Checking Docker and host dependencies..."
-	@ command -v docker > /dev/null || { echo "Docker is missing"; exit 1; }
-	@ docker --version || { echo "Docker is not running or accessible"; exit 1; }
-	@ echo "Docker is installed and running!"
+	@ if command -v docker >/dev/null 2>&1; then \
+	  echo "✅ Docker is installed."; \
+	else \
+	  echo "❌ Docker is NOT installed. Please install Docker to proceed."; \
+	  exit 1; \
+	fi
+	@ if docker --version >/dev/null 2>&1; then \
+	  echo "✅ Docker is running!"; \
+	else \
+	  echo "❌ Docker is not running or accessible."; \
+	  exit 1; \
+	fi
 
 # check if jupyter docker image exists
 check-image-jupyter: check-docker
 	@if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
 	    grep -q "^${DCKRIMG_JPYTR}$$"; then \
-	  echo "Error: Docker image '${DCKRIMG_JPYTR}' is missing."; \
+	  echo "❌ Error: Docker image '${DCKRIMG_JPYTR}' is missing."; \
 	  echo "Please build it using 'make build-jupyter'."; \
 	  exit 1; \
 	else \
-	  echo "Docker image '${DCKRIMG_JPYTR}' exists."; \
+	  echo "✅ Docker image '${DCKRIMG_JPYTR}' exists."; \
 	fi
 
 # check if test docker image exists
 check-image-tests: check-docker
 	@if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
 	    grep -q "^${DCKRIMG_TESTS}$$"; then \
-	  echo "Error: Docker image '${DCKRIMG_TESTS}' is missing."; \
+	  echo "❌ Error: Docker image '${DCKRIMG_TESTS}' is missing."; \
 	  echo "Please build it using 'make build-tests'."; \
 	  exit 1; \
 	else \
-	  echo "Docker image '${DCKRIMG_TESTS}' exists."; \
+	  echo "✅ Docker image '${DCKRIMG_TESTS}' exists."; \
 	fi
 
 # crouping docker image checks
@@ -242,30 +251,40 @@ check-docker-images: check-docker check-image-jupyter check-image-tests
 check-deps-jupyter: check-image-jupyter
 	@ echo "Checking Jupyter dependencies inside Docker..."
 	@ ${DCKRRUN} ${DCKRIMG_JPYTR} sh -c "\
-	  command -v jupyter > /dev/null || (echo 'Jupyter is missing' && exit 1) && \
-	  python3 -m pip show nbconvert > /dev/null || \
-	  (echo 'Python package nbconvert is missing' && exit 1) && \
-	  echo 'All Jupyter dependencies are present!' \
-	"
+	  command -v jupyter > /dev/null && \
+	  echo '✅ Jupyter is installed!' || echo '❌ Jupyter is missing.' && \
+	  python3 -m pip show nbconvert > /dev/null && \
+	  echo '✅ nbconvert is installed!' || echo '❌ nbconvert is missing.'"
 
-# check testing dependencies inside docker
+# check if test docker image exists
 check-deps-tests: check-image-tests
 	@ echo "Checking test dependencies inside Docker..."
 	@ ${DCKRTST} ${DCKRIMG_TESTS} sh -c "\
-	  command -v bash > /dev/null || (echo 'bash is missing' && exit 1) && \
-	  command -v find > /dev/null || (echo 'find is missing' && exit 1) && \
-	  command -v git > /dev/null || (echo 'git is missing' && exit 1) && \
-		command -v make > /dev/null || (echo 'make is missing' && exit 1) && \
-	  command -v rsync > /dev/null || (echo 'rsync is missing' && exit 1) && \
-	  command -v jupyter > /dev/null || (echo 'jupyter is missing' && exit 1) && \
-	  command -v pytest > /dev/null || (echo 'pytest is missing' && exit 1) && \
-	  command -v isort > /dev/null || (echo 'isort is missing' && exit 1) && \
-	  command -v flake8 > /dev/null || (echo 'flake8 is missing' && exit 1) && \
-	  command -v mypy > /dev/null || (echo 'mypy is missing' && exit 1) && \
-	  command -v black > /dev/null || (echo 'black is missing' && exit 1) && \
-	  command -v sbase > /dev/null || (echo 'sbase is missing' && exit 1) && \
-	  echo 'All testing dependencies are present!' \
-	"
+	  command -v bash > /dev/null && \
+	  echo '✅ bash is installed!' || echo '❌ bash is missing.' && \
+	  command -v find > /dev/null && \
+	  echo '✅ find is installed!' || echo '❌ find is missing.' && \
+	  command -v git > /dev/null && \
+	  echo '✅ git is installed!' || echo '❌ git is missing.' && \
+	  command -v make > /dev/null && \
+	  echo '✅ make is installed!' || echo '❌ make is missing.' && \
+	  command -v rsync > /dev/null && \
+	  echo '✅ rsync is installed!' || echo '❌ rsync is missing.' && \
+	  command -v jupyter > /dev/null && \
+	  echo '✅ jupyter is installed!' || echo '❌ jupyter is missing.' && \
+	  command -v pytest > /dev/null && \
+	  echo '✅ pytest is installed!' || echo '❌ pytest is missing.' && \
+	  command -v isort > /dev/null && \
+	  echo '✅ isort is installed!' || echo '❌ isort is missing.' && \
+	  command -v flake8 > /dev/null && \
+	  echo '✅ flake8 is installed!' || echo '❌ flake8 is missing.' && \
+	  command -v mypy > /dev/null && \
+	  echo '✅ mypy is installed!' || echo '❌ mypy is missing.' && \
+	  command -v black > /dev/null && \
+	  echo '✅ black is installed!' || echo '❌ black is missing.' && \
+	  command -v sbase > /dev/null && \
+	  echo '✅ sbase is installed!' || echo '❌ sbase is missing.' && \
+	  echo '✅ All testing dependencies are present!'"
 
 # check all dependencies
 check-all: check-docker-images check-deps-jupyter check-deps-tests
@@ -550,10 +569,10 @@ install-act:
 
 # check if act is installed
 check-act:
-	@ command -v act >/dev/null 2>&1 || \
-	{ echo "Command 'act' is not installed. Please install it with: "\
-	"'make install-act'" \
-	"bash'"; exit 1; }
+	@ command -v act >/dev/null 2>&1 && \
+	{ echo "✅ 'act' is installed!"; } || \
+	{ echo "❌ Command 'act' is not installed. Please install it with: "\
+	"'make install-act' 💻🔧"; exit 1; }
 
 # run github action tests locally
 run-act-tests: check-act
