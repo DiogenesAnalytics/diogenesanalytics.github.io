@@ -101,6 +101,60 @@ def current_directory(print_config_output: Dict[str, str]) -> Path:
     return Path(print_config_output["Current Directory"])
 
 
+@pytest.fixture(scope="function")
+def mock_blog_repo(tmp_path: Path) -> Tuple[Path, Path, Path, Path]:
+    """Fixture to setup a mock blog repo."""
+    # define directories
+    currentdir = tmp_path
+    basdir = tmp_path / "_jupyter"
+    outdir = basdir / "converted"
+    posts_dir = tmp_path / "_posts"
+    assets_dir = tmp_path / "assets"
+
+    # ensure necessary directories exist
+    (basdir / "notebooks").mkdir(parents=True)
+    (outdir / "assets" / "images").mkdir(parents=True)
+    posts_dir.mkdir()
+    (assets_dir / "images").mkdir(parents=True)
+
+    return currentdir, outdir, posts_dir, assets_dir
+
+
+@pytest.fixture(scope="function")
+def mock_converted_files(
+    mock_blog_repo: Tuple[Path, Path, Path]
+) -> Tuple[Path, Path]:
+    """Fixture to populate the mock blog repo with converted test files."""
+    # extract paths from mock_blog_repo fixture
+    _, outdir, *_ = mock_blog_repo
+
+    # setup/make post images dir
+    post_images_dir = outdir / "assets" / "images" / "test_post_images"
+    post_images_dir.mkdir(parents=True)
+
+    # define file paths
+    markdown_post = outdir / "test_post.md"
+    post_image = post_images_dir / "test_image_001.png"
+
+    # Create test files
+    markdown_post.write_text("Test content for markdown file.")
+    post_image.write_text("Test image content.")
+
+    return markdown_post, post_image
+
+
+@pytest.fixture(scope="function")
+def mock_converted_env(
+    mock_blog_repo: Tuple[Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+) -> List[str]:
+    """Fixture to provide environment variables for Makefile testing."""
+    # extract paths from the mock_blog_repo fixture
+    currentdir, outdir, *_ = mock_blog_repo
+
+    return [f"CURRENTDIR={currentdir}", f"OUTDR={outdir}"]
+
+
 def test_git_remote_url() -> None:
     """Test that the git remote URL is valid and accessible."""
     remote_url = get_git_remote_url()
@@ -397,3 +451,75 @@ def test_use_usr_off() -> None:
 
     # Assert that the expected flag "-u" is present in the result
     assert "--user" not in result.stdout
+
+
+def test_mock_blog_repo(mock_blog_repo: Tuple[Path, Path, Path, Path]) -> None:
+    """Test that mock_blog_repo correctly creates required directories."""
+    currentdir, outdir, posts_dir, assets_dir = mock_blog_repo
+
+    # Ensure directories exist
+    assert currentdir.exists(), "Current directory does not exist"
+    assert outdir.exists(), "Output directory does not exist"
+    assert posts_dir.exists(), "_posts directory does not exist"
+    assert (
+        assets_dir / "images"
+    ).exists(), "Assets images directory does not exist"
+    assert (
+        outdir / "assets" / "images"
+    ).exists(), "Converted assets/images directory does not exist"
+
+
+def test_mock_converted_files(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+) -> None:
+    """Test that mock converted files correctly creates test files."""
+    _, outdir, *_ = mock_blog_repo
+    markdown_post, post_image = mock_converted_files
+
+    # Ensure files exist
+    assert markdown_post.exists(), "Markdown post file was not created"
+    assert post_image.exists(), "Post image file was not created"
+
+
+def test_mock_converted_env(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+    mock_converted_env: List[str],
+) -> None:
+    """Test that mock_converted_env correctly returns environment variables."""
+    currentdir, outdir, *_ = mock_blog_repo
+
+    # Ensure environment variables are set correctly
+    assert (
+        f"CURRENTDIR={currentdir}" in mock_converted_env
+    ), "CURRENTDIR not set correctly"
+    assert f"OUTDR={outdir}" in mock_converted_env, "OUTDR not set correctly"
+
+
+def test_basic_sync(
+    mock_blog_repo: Tuple[Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+    mock_converted_env: List[str],
+) -> None:
+    """Test the 'sync' Makefile target using mock blog repo."""
+    *_, posts_dir, assets_dir = mock_blog_repo
+    markdown_post, post_image = mock_converted_files
+
+    # Run Makefile 'sync' command
+    result = run_make("sync", extra_args=mock_converted_env)
+
+    # Validate that the markdown file was moved to _posts/
+    assert (
+        posts_dir / markdown_post.name
+    ).exists(), "Markdown file was not moved to _posts"
+
+    # Validate that the image file was moved to assets/images/
+    assert (
+        assets_dir / "images" / post_image.parent.name / post_image.name
+    ).exists(), "Image file was not moved to assets/images"
+
+    # Check expected output logs
+    assert (
+        "Moving all jupyter" in result.stdout
+    ), "Expected log output not found"
