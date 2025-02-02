@@ -470,11 +470,9 @@ def test_mock_blog_repo(mock_blog_repo: Tuple[Path, Path, Path, Path]) -> None:
 
 
 def test_mock_converted_files(
-    mock_blog_repo: Tuple[Path, Path, Path, Path],
     mock_converted_files: Tuple[Path, Path],
 ) -> None:
     """Test that mock converted files correctly creates test files."""
-    _, outdir, *_ = mock_blog_repo
     markdown_post, post_image = mock_converted_files
 
     # Ensure files exist
@@ -484,7 +482,6 @@ def test_mock_converted_files(
 
 def test_mock_converted_env(
     mock_blog_repo: Tuple[Path, Path, Path, Path],
-    mock_converted_files: Tuple[Path, Path],
     mock_converted_env: List[str],
 ) -> None:
     """Test that mock_converted_env correctly returns environment variables."""
