@@ -1,5 +1,6 @@
 """Tests for Makefile."""
 
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -153,6 +154,11 @@ def mock_converted_env(
     currentdir, outdir, *_ = mock_blog_repo
 
     return [f"CURRENTDIR={currentdir}", f"OUTDR={outdir}"]
+
+
+def test_git_installed() -> None:
+    """Ensure that Git is installed and available."""
+    assert shutil.which("git"), "Git is not installed or not found in PATH"
 
 
 def test_git_remote_url() -> None:
