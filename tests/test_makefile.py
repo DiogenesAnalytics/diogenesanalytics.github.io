@@ -13,12 +13,41 @@ import pytest
 from pytest import MonkeyPatch
 
 
+def get_source_makefile_path() -> Path:
+    """Dynamically get the path to the source Makefile."""
+    # start from the current file's directory
+    current_dir = Path(__file__).resolve().parent
+
+    # traverse upwards until you the 'Makefile' (assumed repo root)
+    while current_dir.parent != current_dir:
+        if (current_dir / "Makefile").exists():
+            return current_dir  # found the source repository
+        current_dir = current_dir.parent
+
+    # coudln't find it
+    raise FileNotFoundError(
+        "Could not find the Makefile in the source repository."
+    )
+
+
 def run_make(
-    target: str, dry_mode: bool = False, extra_args: Optional[List[str]] = None
+    target: str,
+    dry_mode: bool = False,
+    extra_args: Optional[List[str]] = None,
+    cwd: Optional[Path] = None,
+    makefile_path: Optional[Path] = None,
 ) -> subprocess.CompletedProcess[str]:
     """Runs a Makefile target."""
+    # default to source repo Makefile path if not provided
+    if makefile_path is None:
+        makefile_path = get_source_makefile_path() / "Makefile"
+
+    # set default cwd to the current working directory if not provided
+    if cwd is None:
+        cwd = Path(".")
+
     # initial command string
-    command = ["make"]
+    command = ["make", "-f", str(makefile_path)]
 
     # check for -n flag
     if dry_mode:
@@ -32,7 +61,7 @@ def run_make(
         command.extend(extra_args)
 
     # run process and get output
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
 
     # done
     return result
@@ -154,6 +183,94 @@ def mock_converted_env(
     currentdir, outdir, *_ = mock_blog_repo
 
     return [f"CURRENTDIR={currentdir}", f"OUTDR={outdir}"]
+
+
+@pytest.fixture(scope="function")
+def mock_git_repo(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+) -> Tuple[Path, Path, Path, Path]:
+    """Fixture to set up a mock Git repo with untracked files."""
+    # extract paths from mock_blog_repo
+    currentdir, outdir, posts_dir, assets_dir = mock_blog_repo
+
+    # initialize Git repository
+    subprocess.run(["git", "init"], cwd=currentdir, check=True)
+
+    # create a .gitignore file that ignores `_jupyter/converted/`
+    gitignore_path = currentdir / ".gitignore"
+    gitignore_path.write_text("_jupyter/converted/\n")
+
+    # configure user info for git in this repository
+    subprocess.run(
+        ["git", "config", "user.name", "PyTest"], cwd=currentdir, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "pytest@example.com"],
+        cwd=currentdir,
+        check=True,
+    )
+
+    # add dummy files to _posts
+    dummy_post = posts_dir / "dummy.md"
+    dummy_post.write_text(
+        "This is a dummy file to make _posts directory tracked."
+    )
+
+    # add dummy images dir and image to assets/images
+    dummy_image_dir = assets_dir / "images" / "dummy_images"
+    dummy_image_dir.mkdir(parents=True)
+    dummy_image = dummy_image_dir / "dummy_image.png"
+    dummy_image.write_text(
+        "This is a dummy image file to make assets directory tracked."
+    )
+
+    # stage .gitignore, _posts, and assets directories
+    subprocess.run(
+        ["git", "add", ".gitignore", "_posts", "assets"],
+        cwd=currentdir,
+        check=True,
+    )
+
+    # commit the changes
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "-m",
+            "Initial commit: setup repo structure with dummy files",
+        ],
+        cwd=currentdir,
+        check=True,
+    )
+
+    return currentdir, outdir, posts_dir, assets_dir
+
+
+@pytest.fixture(scope="function")
+def mock_synced_files(
+    mock_git_repo: Tuple[Path, Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+) -> Tuple[Path, Path]:
+    """Fixture to sync converted files to _posts/ and assets/images/."""
+    # extract paths from mock_git_repo
+    _, _, posts_dir, assets_dir = mock_git_repo
+
+    # extract converted files
+    markdown_post, post_image = mock_converted_files
+
+    # define sync destination paths
+    synced_markdown = posts_dir / markdown_post.name
+    synced_image_dir = assets_dir / "images" / post_image.parent.name
+    synced_image = synced_image_dir / post_image.name
+
+    # make sure the synced image dir exists
+    synced_image_dir.mkdir(parents=True)
+
+    # simulate rsync of files
+    synced_markdown.write_text(markdown_post.read_text())
+    synced_image.write_text(post_image.read_text())
+
+    return synced_markdown, synced_image
 
 
 def test_git_installed() -> None:
@@ -526,3 +643,76 @@ def test_basic_sync(
     assert (
         "Moving all jupyter" in result.stdout
     ), "Expected log output not found"
+
+
+def test_mock_git_repo(mock_git_repo: Tuple[Path, Path, Path, Path]) -> None:
+    """Test that the mock Git repo is correctly initialized."""
+    # get the currend temp dir
+    currentdir, _, _, _ = mock_git_repo
+
+    # ensure .git directory exists
+    assert (currentdir / ".git").exists(), "Git repository was not initialized."
+
+    # ensure .gitignore exists ...
+    gitignore_path = currentdir / ".gitignore"
+    assert gitignore_path.exists(), ".gitignore file was not created."
+
+    # ... and contains expected content
+    gitignore_content = gitignore_path.read_text().strip()
+    assert (
+        "_jupyter/converted/" in gitignore_content
+    ), ".gitignore rule is missing."
+
+    # ensure `git status` runs without error
+    result = subprocess.run(
+        ["git", "status"], cwd=currentdir, capture_output=True, text=True
+    )
+    assert (
+        result.returncode == 0
+    ), "Git repository is not functioning correctly."
+
+
+def test_mock_synced_files(mock_synced_files: Tuple[Path, Path]) -> None:
+    """Test that files were correctly synced to _posts/ and assets/images/."""
+    # get synced files
+    synced_markdown, synced_image = mock_synced_files
+
+    assert synced_markdown.exists(), "Markdown file was not synced correctly."
+    assert synced_image.exists(), "Image file was not synced correctly."
+
+
+def test_unsync(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_synced_files: Tuple[Path, Path],
+    mock_converted_env: List[str],
+) -> None:
+    """Test 'unsync' for removing files from _posts and assets/images."""
+    # get currentdir
+    currentdir, *_ = mock_blog_repo
+
+    # extract directories and synced files
+    synced_markdown, synced_image = mock_synced_files
+
+    # run Makefile 'unsync' command
+    result = run_make("unsync", extra_args=mock_converted_env, cwd=currentdir)
+
+    # check code
+    assert (
+        result.returncode == 0
+    ), f"Expected exit code 0, but got {result.returncode}."
+
+    # check that the files were removed from _posts and assets/images
+    assert (
+        not synced_markdown.exists()
+    ), "Synced markdown file should be removed after unsync."
+    assert (
+        not synced_image.exists()
+    ), "Synced image file should be removed after unsync."
+
+    # check expected log output for file removal
+    assert (
+        "Removed ->" in result.stdout
+    ), "Expected log output not found for file removal."
+    assert (
+        "Unsyncing complete." in result.stdout
+    ), "Expected 'Unsyncing complete.' message not found."
