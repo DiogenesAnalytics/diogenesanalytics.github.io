@@ -2,6 +2,7 @@
 
 import shutil
 import subprocess
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -30,6 +31,12 @@ def get_source_makefile_path() -> Path:
     )
 
 
+@lru_cache(maxsize=1)
+def get_cached_makefile_path() -> Path:
+    """Retrieves and caches path to the Makefile in source repository."""
+    return get_source_makefile_path() / "Makefile"
+
+
 def run_make(
     target: str,
     dry_mode: bool = False,
@@ -40,7 +47,7 @@ def run_make(
     """Runs a Makefile target."""
     # default to source repo Makefile path if not provided
     if makefile_path is None:
-        makefile_path = get_source_makefile_path() / "Makefile"
+        makefile_path = get_cached_makefile_path()
 
     # set default cwd to the current working directory if not provided
     if cwd is None:
