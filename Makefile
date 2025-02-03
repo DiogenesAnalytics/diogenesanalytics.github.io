@@ -1,11 +1,11 @@
 .PHONY: all check-docker check-image-jupyter check-image-tests check-images \
         check-deps-jupyter check-deps-tests check-all build-jupyter \
-        build-tests jupyter execute convert sync jekyll build-site pause \
-        address containers check-repo-safety check-git commit push publish \
-        safe-repository list-containers stop-containers restart-containers \
-        unsync clear-nb clear-output clear-jekyll clean update-times reset \
-        print-config lint tests pytest isort black flake8 mypy install-act \
-        check-act run-act-tests shell
+        build-tests jupyter execute convert check-renamed clear-renamed sync \
+        jekyll build-site pause address containers check-repo-safety check-git \
+        commit push publish safe-repository list-containers stop-containers \
+        restart-containers unsync clear-nb clear-output clear-jekyll clean \
+        update-times reset print-config lint tests pytest isort black flake8 \
+        mypy install-act check-act run-act-tests shell
 
 
 # Usage:
@@ -22,6 +22,8 @@
 # make jupyter             # startup docker container running jupyter server
 # make execute             # execute all jupyter notebooks (in place)
 # make convert             # convert all jupyter notebooks (even if not changed)
+# make check-renamed       # check for untracked posts
+# make clear-renamed       # clear renamed posts and their image dirs
 # make sync                # copy all converted files to necessary directories
 # make jekyll              # startup docker container running jekyll server
 # make build-site          # build jekyll static site
@@ -194,6 +196,16 @@ NBEXEC = jupyter nbconvert --to notebook --execute --inplace
 NBCNVR = jupyter nbconvert ${CNVRSNFLGS}
 NBCLER = jupyter nbconvert --clear-output --inplace
 
+# get a list of untracked posts that do not have corresponding notebooks
+find_untracked_posts = $(shell \
+  git ls-files --others --exclude-standard _posts/*.md | \
+  while read post; do \
+    notebook="_jupyter/notebooks/$$(basename "$$post" .md).ipynb"; \
+    if [ ! -f "$$notebook" ]; then \
+      echo "$$post"; \
+    fi; \
+  done)
+
 ################################################################################
 # COMMANDS                                                                     #
 ################################################################################
@@ -329,8 +341,42 @@ convert:
 	@ echo "Converting all Jupyter notebooks: ${NOTEBOOKS}"
 	@ ${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} ${NOTEBOOKS}
 
+# check for untracked posts
+check-renamed:
+	@ echo "Checking for untracked posts with no corresponding notebooks..."
+	@ untracked_posts="$(find_untracked_posts)"; \
+	if [ -n "$$untracked_posts" ]; then \
+	  echo "⚠️ Untracked posts found:"; \
+	  echo "$$untracked_posts"; \
+	  echo "Suggested cleanup: make clear-renamed"; \
+	else \
+	  echo "✅ No untracked posts found."; \
+	fi
+
+# clear renamed posts and their corresponding image dirs
+clear-renamed:
+	@ echo "Cleaning up untracked posts and their image directories..."; \
+	untracked_posts="$(find_untracked_posts)"; \
+	if [ -n "$$untracked_posts" ]; then \
+	  for post in $$untracked_posts; do \
+	    rm -f "$$post"; \
+	    echo "🗑️ Removed untracked post: $$post"; \
+	    # extract the base name (without extension) of the post \
+	    notebook_name=$$(basename $$post .md); \
+	    # remove the corresponding image directory from assets/images/ \
+	    image_dir="assets/images/$$notebook_name"_files; \
+	    if [ -d "$$image_dir" ]; then \
+	      rm -rf "$$image_dir"; \
+	      echo "🗑️ Removed corresponding image directory: $$image_dir"; \
+	    fi; \
+	  done; \
+	  echo "Cleanup complete."; \
+	else \
+	  echo "✅ No untracked posts to remove."; \
+	fi
+
 # sync all converted files to necessary locations in TEssay source
-sync:
+sync: check-renamed
 	@ if ls ${OUTDR} | grep -q ".*\.${OEXT}$$"; then \
 	  echo "Moving all jupyter ${OFRMT} files to _posts/:"; \
 	  rsync -havP ${OUTDR}/*.${OEXT} ${CURRENTDIR}/_posts/; \

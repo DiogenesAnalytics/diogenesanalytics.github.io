@@ -163,7 +163,7 @@ def mock_converted_files(
 ) -> Tuple[Path, Path]:
     """Fixture to populate the mock blog repo with converted test files."""
     # extract paths from mock_blog_repo fixture
-    _, outdir, *_ = mock_blog_repo
+    currentdir, outdir, *_ = mock_blog_repo
 
     # setup/make post images dir
     post_images_dir = outdir / "assets" / "images" / "test_post_files"
@@ -172,10 +172,14 @@ def mock_converted_files(
     # define file paths
     markdown_post = outdir / "test_post.md"
     post_image = post_images_dir / "test_image_001.png"
+    test_notebook = currentdir / "_jupyter" / "notebooks" / "test_post.ipynb"
 
     # Create test files
     markdown_post.write_text("Test content for markdown file.")
     post_image.write_text("Test image content.")
+    test_notebook.write_text(
+        '{"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}'
+    )
 
     return markdown_post, post_image
 
@@ -216,6 +220,11 @@ def mock_git_repo(
         cwd=currentdir,
         check=True,
     )
+    # add dummy notebook to _jupyter/notebooks
+    dummy_notebook = currentdir / "_jupyter" / "notebooks" / "dummy.ipynb"
+    dummy_notebook.write_text(
+        '{"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}'
+    )
 
     # add dummy files to _posts
     dummy_post = posts_dir / "dummy.md"
@@ -233,7 +242,7 @@ def mock_git_repo(
 
     # stage .gitignore, _posts, and assets directories
     subprocess.run(
-        ["git", "add", ".gitignore", "_posts", "assets"],
+        ["git", "add", ".gitignore", "_posts", "assets", "_jupyter/notebooks"],
         cwd=currentdir,
         check=True,
     )
@@ -278,6 +287,29 @@ def mock_synced_files(
     synced_image.write_text(post_image.read_text())
 
     return synced_markdown, synced_image
+
+
+@pytest.fixture(scope="function")
+def mock_renamed_nb(
+    mock_synced_files: Tuple[Path, Path],
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+) -> Path:
+    """Fixture to simulate a renamed/deleted notebook, leaving a lingering post."""
+    # get mock dir
+    currentdir, *_ = mock_blog_repo
+
+    # get test post
+    synced_markdown, _ = mock_synced_files
+
+    # get path to nb
+    root_nb_name = synced_markdown.stem
+    nb_path = currentdir / "_jupyter" / "notebooks" / f"{root_nb_name}.ipynb"
+
+    # delete the original notebook to simulate renaming
+    nb_path.unlink()
+
+    # get renamed
+    return nb_path
 
 
 def test_git_installed() -> None:
@@ -677,6 +709,129 @@ def test_mock_git_repo(mock_git_repo: Tuple[Path, Path, Path, Path]) -> None:
     assert (
         result.returncode == 0
     ), "Git repository is not functioning correctly."
+
+
+def test_check_renamed_no_changes(
+    mock_synced_files: Tuple[Path, Path],
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+) -> None:
+    """Test that check-renamed does nothing when no renamed notebooks exist."""
+    # get mock dir
+    currentdir, *_ = mock_blog_repo
+
+    # run
+    result = run_make("check-renamed", cwd=currentdir)
+
+    # check code
+    assert (
+        result.returncode == 0
+    ), f"Expected exit code 0, but got {result.returncode}."
+
+    # get synced files
+    synced_markdown, _ = mock_synced_files
+
+    # check
+    assert "No untracked posts found" in result.stdout
+    assert str(synced_markdown) not in result.stdout
+
+
+def test_check_renamed_detects_lingering(
+    mock_renamed_nb: Path,
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+) -> None:
+    """Test check-renamed detects lingering posts when notebook is renamed."""
+    # get mock dir
+    currentdir, _, _, _ = mock_blog_repo
+
+    # get markdown post without notebook
+    lingering_post = f"{mock_renamed_nb.stem}.md"
+
+    # run
+    result = run_make("check-renamed", cwd=currentdir)
+
+    # check code
+    assert (
+        result.returncode == 0
+    ), f"Expected exit code 0, but got {result.returncode}."
+
+    # check
+    assert "Untracked posts found" in result.stdout
+    assert "make clear-renamed" in result.stdout
+    assert lingering_post in result.stdout
+
+
+def test_clear_renamed_no_changes(
+    mock_synced_files: Tuple[Path, Path],
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+) -> None:
+    """Test that clear-renamed does nothing when no renamed notebooks exist."""
+    # get mock dir
+    currentdir, *_ = mock_blog_repo
+
+    # run
+    result = run_make("clear-renamed", cwd=currentdir)
+
+    # check code
+    assert (
+        result.returncode == 0
+    ), f"Expected exit code 0, but got {result.returncode}."
+
+    # get synced files
+    synced_markdown, _ = mock_synced_files
+
+    # check
+    assert "No untracked posts" in result.stdout
+    assert "Removed untracked" not in result.stdout
+    assert str(synced_markdown) not in result.stdout
+
+
+def test_clear_renamed_with_lingering_posts_and_images(
+    mock_renamed_nb: Path,
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_synced_files: Tuple[Path, Path],
+) -> None:
+    """Test that clear-renamed removes lingering posts and images dir."""
+    # get the current directory and mock paths
+    currentdir, _, posts_dir, assets_dir = mock_blog_repo
+
+    # get synced files
+    synced_markdown, _ = mock_synced_files
+
+    # simulate the lingering renamed post and image directory
+    post_name = f"{mock_renamed_nb.stem}.md"
+    image_dir = assets_dir / "images" / f"{synced_markdown.stem}_files"
+
+    # verify the image directory exists before running the command
+    assert (
+        image_dir.exists()
+    ), f"Image directory {image_dir} should exist before cleanup"
+
+    # run
+    result = run_make("clear-renamed", cwd=currentdir)
+
+    # check code
+    assert (
+        result.returncode == 0
+    ), f"Expected exit code 0, but got {result.returncode}."
+
+    # verify that the lingering post was deleted
+    assert (
+        not synced_markdown.exists()
+    ), f"Post {synced_markdown} should be deleted"
+    assert str(post_name) in result.stdout
+    assert "Removed untracked post" in result.stdout
+
+    # verify that the corresponding image directory was deleted
+    assert (
+        not image_dir.exists()
+    ), f"Image directory {image_dir} should be deleted"
+    assert str(image_dir.stem) in result.stdout
+    assert "Removed corresponding image directory" in result.stdout
+
+    # check that the command output contains the cleanup success message
+    assert (
+        "Cleanup complete." in result.stdout
+    ), f"Expected 'Cleanup complete.' in output but got {result.stdout}"
 
 
 def test_mock_synced_files(mock_synced_files: Tuple[Path, Path]) -> None:
