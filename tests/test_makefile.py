@@ -166,7 +166,7 @@ def mock_converted_files(
     _, outdir, *_ = mock_blog_repo
 
     # setup/make post images dir
-    post_images_dir = outdir / "assets" / "images" / "test_post_images"
+    post_images_dir = outdir / "assets" / "images" / "test_post_files"
     post_images_dir.mkdir(parents=True)
 
     # define file paths
@@ -224,7 +224,7 @@ def mock_git_repo(
     )
 
     # add dummy images dir and image to assets/images
-    dummy_image_dir = assets_dir / "images" / "dummy_images"
+    dummy_image_dir = assets_dir / "images" / "dummy_files"
     dummy_image_dir.mkdir(parents=True)
     dummy_image = dummy_image_dir / "dummy_image.png"
     dummy_image.write_text(
