@@ -22,6 +22,7 @@ RUN apt-get update \
       gnupg \
       make \
       rsync \
+      tree \
       wget \
       unzip \
     && rm -rf /var/lib/apt/lists/*
