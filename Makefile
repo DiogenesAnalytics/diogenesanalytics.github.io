@@ -224,6 +224,11 @@ define process-renamed-images
 	for post in $(wildcard $(PSTDR)/*.md); do \
 	  post_name=$$(basename $$post .md); \
 	  image_dir="assets/images/$${post_name}$(FGEXT)"; \
+	  out_image_dir="$(OUTDR)/assets/images/$${post_name}$(FGEXT)"; \
+	  if [ ! -d "$$out_image_dir" ]; then \
+	    echo "⚠️ Skipping $${post_name}: No converted assets directory found."; \
+	    continue; \
+	  fi; \
 	  if [ -d $$image_dir ]; then \
 	    for img in $$image_dir/*; do \
 	      if ! [ -f "$(OUTDR)/assets/images/$${post_name}$(FGEXT)/$$(basename $$img)" ]; then \
