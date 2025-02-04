@@ -1,63 +1,70 @@
 .PHONY: all check-docker check-image-jupyter check-image-tests check-images \
         check-deps-jupyter check-deps-tests check-all build-jupyter \
-        build-tests jupyter execute convert check-renamed clear-renamed sync \
-        jekyll build-site pause address containers check-repo-safety check-git \
-        commit push publish safe-repository list-containers stop-containers \
+        build-tests jupyter execute convert check-renamed-images \
+        check-renamed-posts check-renamed clear-renamed-images \
+        clear-renamed-posts clear-renamed sync sync-check jekyll build-site \
+        pause address containers check-repo-safety check-git commit push \
+        publish safe-repository list-containers stop-containers \
         restart-containers unsync clear-nb clear-output clear-jekyll clean \
         update-times reset print-config lint tests pytest isort black flake8 \
         mypy install-act check-act run-act-tests shell
 
 
 # Usage:
-# make                     # execute and convert all Jupyter notebooks
-# make check-docker        # check docker and host dependencies
-# make check-image-jupyter # check if the Jupyter Docker image exists
-# make check-image-tests   # check if the Test Docker image exists
-# make check-images        # check all docker images
-# make check-deps-jupyter  # check Jupyter dependencies inside Docker
-# make check-deps-tests    # check test dependencies inside Docker
-# make check-all           # check all dependencies (Docker, Jupyter, Tests)
-# make build-jupyter       # build jupyter Docker image
-# make build-tests         # build test docker image
-# make jupyter             # startup docker container running jupyter server
-# make execute             # execute all jupyter notebooks (in place)
-# make convert             # convert all jupyter notebooks (even if not changed)
-# make check-renamed       # check for untracked posts
-# make clear-renamed       # clear renamed posts and their image dirs
-# make sync                # copy all converted files to necessary directories
-# make jekyll              # startup docker container running jekyll server
-# make build-site          # build jekyll static site
-# make pause               # pause PSECS (to pause between commands)
-# make address             # get docker container address/port
-# make containers          # launch all docker containers
-# make check-safedir       # check if safe dir is setup
-# make check-git           # check if git is installed
-# make commit              # git add/commit all synced files
-# make push                # git push to remote branch
-# make publish             # WARNING: convert, sync, commit, and push at once
-# make safe-repository     # mark the repository as safe
-# make list-containers     # list all running containers
-# make stop-containers     # simply stops all running docker containers
-# make restart-containers  # restart all containers
-# make unsync              # remove all synced files
-# make clear-nb            # simply clears jupyter notebook output
-# make clear-output        # removes all converted files
-# make clear-jekyll        # removes jekyll _site/ directory
-# make clean               # combines all clearing commands into one
-# make update-times        # update timestamps to now
-# make reset               # WARNING: completely reverses all changes
-# make print-config        # print info on variables used
-# make lint                # run linters
-# make tests               # run full testing suite
-# make pytest              # run pytest in docker container
-# make isort               # run isort in docker container
-# make black               # run black in docker container
-# make flake8              # run flake8 in docker container
-# make mypy                # run mypy in docker container
-# make install-act         # # install act command
-# make check-act           # check if act is installed
-# make run-act-tests       # run github action tests locally
-# make shell               # create interactive shell in docker container
+# make                      # execute and convert all Jupyter notebooks
+# make check-docker         # check docker and host dependencies
+# make check-image-jupyter  # check if the Jupyter Docker image exists
+# make check-image-tests    # check if the Test Docker image exists
+# make check-images         # check all docker images
+# make check-deps-jupyter   # check Jupyter dependencies inside Docker
+# make check-deps-tests     # check test dependencies inside Docker
+# make check-all            # check all dependencies (Docker, Jupyter, Tests)
+# make build-jupyter        # build jupyter Docker image
+# make build-tests          # build test docker image
+# make jupyter              # startup docker container running jupyter server
+# make execute              # execute all jupyter notebooks (in place)
+# make convert              # convert all jupyter notebooks (include unchanged)
+# make check-renamed-images # check for lingering images
+# make check-renamed-posts  # check for untracked posts
+# make check-renamed        # check for all renamed posts/images
+# make clear-renamed-images # clear lingering images
+# make clear-renamed-posts  # clear renamed posts and their image dirs
+# make clear-renamed        # clear all renamed posts/images
+# make sync                 # copy all converted files to necessary directories
+# make sync-check           # sync and check converted and blogging dirs
+# make jekyll               # startup docker container running jekyll server
+# make build-site           # build jekyll static site
+# make pause                # pause PSECS (to pause between commands)
+# make address              # get docker container address/port
+# make containers           # launch all docker containers
+# make check-safedir        # check if safe dir is setup
+# make check-git            # check if git is installed
+# make commit               # git add/commit all synced files
+# make push                 # git push to remote branch
+# make publish              # WARNING: convert, sync, commit, and push at once
+# make safe-repository      # mark the repository as safe
+# make list-containers      # list all running containers
+# make stop-containers      # simply stops all running docker containers
+# make restart-containers   # restart all containers
+# make unsync               # remove all synced files
+# make clear-nb             # simply clears jupyter notebook output
+# make clear-output         # removes all converted files
+# make clear-jekyll         # removes jekyll _site/ directory
+# make clean                # combines all clearing commands into one
+# make update-times         # update timestamps to now
+# make reset                # WARNING: completely reverses all changes
+# make print-config         # print info on variables used
+# make lint                 # run linters
+# make tests                # run full testing suite
+# make pytest               # run pytest in docker container
+# make isort                # run isort in docker container
+# make black                # run black in docker container
+# make flake8               # run flake8 in docker container
+# make mypy                 # run mypy in docker container
+# make install-act          # # install act command
+# make check-act            # check if act is installed
+# make run-act-tests        # run github action tests locally
+# make shell                # create interactive shell in docker container
 
 
 ################################################################################
@@ -206,6 +213,32 @@ find_untracked_posts = $(shell \
     fi; \
   done)
 
+# Define the Make function
+define process-renamed-images
+	if [ ! -d "$(OUTDR)" ]; then \
+	  echo "⚠️ Warning: $(OUTDR) directory is missing. Run 'make sync' first."; \
+	  exit 1; \
+	fi; \
+	mode=$(1); \
+	echo "$$mode renamed or lingering images..."; \
+	for post in $(wildcard $(PSTDR)/*.md); do \
+	  post_name=$$(basename $$post .md); \
+	  image_dir="assets/images/$${post_name}$(FGEXT)"; \
+	  if [ -d $$image_dir ]; then \
+	    for img in $$image_dir/*; do \
+	      if ! [ -f "$(OUTDR)/assets/images/$${post_name}$(FGEXT)/$$(basename $$img)" ]; then \
+	        if [ "$$mode" = "Clearing" ]; then \
+	          rm -f $$img; \
+	          echo "🗑️ Removed lingering image: $$img"; \
+	        else \
+	          echo "⚠️ Lingering image detected: $$img"; \
+	        fi; \
+	      fi; \
+	    done; \
+	  fi; \
+	done
+endef
+
 ################################################################################
 # COMMANDS                                                                     #
 ################################################################################
@@ -341,8 +374,12 @@ convert:
 	@ echo "Converting all Jupyter notebooks: ${NOTEBOOKS}"
 	@ ${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} ${NOTEBOOKS}
 
+# check for lingering images
+check-renamed-images:
+	@ $(call process-renamed-images,Checking)
+
 # check for untracked posts
-check-renamed:
+check-renamed-posts:
 	@ echo "Checking for untracked posts with no corresponding notebooks..."
 	@ untracked_posts="$(find_untracked_posts)"; \
 	if [ -n "$$untracked_posts" ]; then \
@@ -353,8 +390,15 @@ check-renamed:
 	  echo "✅ No untracked posts found."; \
 	fi
 
+# check for all renamed
+check-renamed: check-renamed-posts check-renamed-images
+
+# clear lingering images
+clear-renamed-images:
+	@ $(call process-renamed-images,Clearing)
+
 # clear renamed posts and their corresponding image dirs
-clear-renamed:
+clear-renamed-posts:
 	@ echo "Cleaning up untracked posts and their image directories..."; \
 	untracked_posts="$(find_untracked_posts)"; \
 	if [ -n "$$untracked_posts" ]; then \
@@ -375,8 +419,11 @@ clear-renamed:
 	  echo "✅ No untracked posts to remove."; \
 	fi
 
+# clear all renamed posts/images
+clear-renamed: clear-renamed-posts clear-renamed-images
+
 # sync all converted files to necessary locations in TEssay source
-sync: check-renamed
+sync:
 	@ if ls ${OUTDR} | grep -q ".*\.${OEXT}$$"; then \
 	  echo "Moving all jupyter ${OFRMT} files to _posts/:"; \
 	  rsync -havP ${OUTDR}/*.${OEXT} ${CURRENTDIR}/_posts/; \
@@ -385,6 +432,9 @@ sync: check-renamed
 	  echo "Moving all jupyter image files to /assets/images"; \
 	  rsync -havP ${OUTDR}/assets/ ${CURRENTDIR}/assets; \
 	fi
+
+# sync and check converted and blogging dirs
+sync-check: sync check-renamed
 
 # launch jekyll local server docker image
 jekyll:

@@ -123,9 +123,14 @@ command, simply run `make -n [COMMAND]`.
 + `jupyter`: launches the Jupyter notebook development Docker image
 + `execute`: execute all Jupyter notebooks (in place)
 + `convert`: convert all Jupyter notebooks (even if not changed)
-+ `check-renamed`: check for untracked posts
-+ `clear-renamed`: clear renamed posts and their image dirs
++ `check-renamed-images`: check for lingering images
++ `check-renamed-posts`: check for untracked posts
++ `check-renamed`: check all renamed posts/images
++ `clear-renamed-images`: clear lingering images
++ `clear-renamed-posts`: clear renamed posts and their image dirs
++ `clear-renamed`: clear all renamed posts/images
 + `sync`: copy all converted files to necessary directories
++ `sync-check`: sync and check converted files to necessary directories
 + `jekyll`: startup Docker container running Jekyll server
 + `build-site`: build Jekyll static site
 + `pause`: pause PSECS (to pause between commands)

@@ -312,6 +312,70 @@ def mock_renamed_nb(
     return nb_path
 
 
+@pytest.fixture(scope="function")
+def mock_missing_outdir(
+    mock_blog_repo: Tuple[Path, Path, Path, Path]
+) -> Tuple[Path, Path, Path, Path]:
+    """Simulates missing output directory."""
+    # get dirs
+    currentdir, outdir, posts_dir, assets_dir = mock_blog_repo
+
+    # remove outdir
+    shutil.rmtree(outdir)
+
+    # pass on all other paths
+    return currentdir, outdir, posts_dir, assets_dir
+
+
+@pytest.fixture(scope="function")
+def mock_no_lingering_images(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_converted_files: Tuple[Path, Path],
+) -> Tuple[Path, Path, Path]:
+    """Simulate synced files with no lingering images."""
+    # extract paths from mock_git_repo
+    currentdir, _, posts_dir, assets_dir = mock_blog_repo
+
+    # extract converted files
+    markdown_post, post_image = mock_converted_files
+
+    # define sync destination paths
+    synced_markdown = posts_dir / markdown_post.name
+    synced_image_dir = assets_dir / "images" / post_image.parent.name
+    synced_image = synced_image_dir / post_image.name
+
+    # make sure the synced image dir exists
+    synced_image_dir.mkdir(parents=True)
+
+    # simulate rsync of files
+    synced_markdown.write_text(markdown_post.read_text())
+    synced_image.write_text(post_image.read_text())
+
+    return currentdir, synced_markdown, synced_image
+
+
+@pytest.fixture(scope="function")
+def mock_has_lingering_images(
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
+    mock_no_lingering_images: Tuple[Path, Path, Path],
+) -> Tuple[Path, Path]:
+    """Simulate synced files with one lingering image."""
+    # extract paths from repo
+    *_, posts_dir, assets_dir = mock_blog_repo
+
+    # get currentdir
+    currentdir, _, synced_image = mock_no_lingering_images
+
+    # add lingering images to assets/images
+    lingering_image_dir = assets_dir / "images" / synced_image.parent.name
+    lingering_image = lingering_image_dir / "lingering_image.png"
+    lingering_image.write_text(
+        "This is a lingering image file to make assets directory tracked."
+    )
+
+    return currentdir, lingering_image
+
+
 def test_git_installed() -> None:
     """Ensure that Git is installed and available."""
     assert shutil.which("git"), "Git is not installed or not found in PATH"
@@ -720,7 +784,7 @@ def test_check_renamed_no_changes(
     currentdir, *_ = mock_blog_repo
 
     # run
-    result = run_make("check-renamed", cwd=currentdir)
+    result = run_make("check-renamed-posts", cwd=currentdir)
 
     # check code
     assert (
@@ -747,7 +811,7 @@ def test_check_renamed_detects_lingering(
     lingering_post = f"{mock_renamed_nb.stem}.md"
 
     # run
-    result = run_make("check-renamed", cwd=currentdir)
+    result = run_make("check-renamed-posts", cwd=currentdir)
 
     # check code
     assert (
@@ -769,7 +833,7 @@ def test_clear_renamed_no_changes(
     currentdir, *_ = mock_blog_repo
 
     # run
-    result = run_make("clear-renamed", cwd=currentdir)
+    result = run_make("clear-renamed-posts", cwd=currentdir)
 
     # check code
     assert (
@@ -807,7 +871,7 @@ def test_clear_renamed_with_lingering_posts_and_images(
     ), f"Image directory {image_dir} should exist before cleanup"
 
     # run
-    result = run_make("clear-renamed", cwd=currentdir)
+    result = run_make("clear-renamed-posts", cwd=currentdir)
 
     # check code
     assert (
@@ -832,6 +896,168 @@ def test_clear_renamed_with_lingering_posts_and_images(
     assert (
         "Cleanup complete." in result.stdout
     ), f"Expected 'Cleanup complete.' in output but got {result.stdout}"
+
+
+def test_check_renamed_images_missing_outdir(
+    mock_missing_outdir: Tuple[Path, Path, Path, Path]
+) -> None:
+    """Test when the _jupyter/converted directory is missing."""
+    # get the current directory and mock paths
+    currentdir, *_ = mock_missing_outdir
+
+    # run
+    result = run_make("check-renamed-images", cwd=currentdir)
+
+    # make sure it failed
+    assert result.returncode != 0
+    assert "⚠️ Warning" in result.stdout
+
+
+def test_clear_renamed_images_missing_outdir(
+    mock_missing_outdir: Tuple[Path, Path, Path, Path]
+) -> None:
+    """Test when the _jupyter/converted directory is missing."""
+    # get the current directory and mock paths
+    currentdir, *_ = mock_missing_outdir
+
+    # run
+    result = run_make("clear-renamed-images", cwd=currentdir)
+
+    # make sure it failed
+    assert result.returncode != 0
+    assert "⚠️ Warning" in result.stdout
+
+
+def test_check_renamed_images_no_lingering(
+    mock_no_lingering_images: Tuple[Path, Path, Path],
+) -> None:
+    """Test that no warnings appear when there are no lingering images."""
+    # Get the current directory
+    currentdir, _, synced_image = mock_no_lingering_images
+
+    # Run the check-renamed-images command
+    result = run_make("check-renamed-images", cwd=currentdir)
+
+    # Ensure it ran successfully and no warnings were issued
+    assert (
+        result.returncode == 0
+    ), f"Code: {result.returncode}. Output: {result.stdout}"
+
+    assert (
+        synced_image.name not in result.stdout
+    ), f"{synced_image.name!r} found in the output: {result.stdout}"
+
+    assert (
+        "⚠️ Lingering image detected" not in result.stdout
+    ), f"Lingering image detected' in the output: {result.stdout}"
+
+    assert (
+        "🗑️ Removed lingering image" not in result.stdout
+    ), f"'Removed lingering image' in the output: {result.stdout}"
+
+    assert (
+        "Checking renamed or lingering images" in result.stdout
+    ), "Expected to find 'Checking renamed or lingering images' in the output."
+
+
+def test_clear_renamed_images_no_lingering(
+    mock_no_lingering_images: Tuple[Path, Path, Path],
+) -> None:
+    """Test that no warnings appear when there are no lingering images."""
+    # Get the current directory
+    currentdir, _, synced_image = mock_no_lingering_images
+
+    # Run the clear-renamed-images command
+    result = run_make("clear-renamed-images", cwd=currentdir)
+
+    # Ensure it ran successfully and no warnings were issued
+    assert (
+        result.returncode == 0
+    ), f"Code: {result.returncode}. Output: {result.stdout}"
+
+    assert (
+        synced_image.name not in result.stdout
+    ), f"{synced_image.name!r} found in the output: {result.stdout}"
+
+    assert (
+        "⚠️ Lingering image detected" not in result.stdout
+    ), f"Lingering image detected' in the output: {result.stdout}"
+
+    assert (
+        "🗑️ Removed lingering image" not in result.stdout
+    ), f"'Removed lingering image' in the output: {result.stdout}"
+
+    assert (
+        "Clearing renamed or lingering images" in result.stdout
+    ), "Expected to find 'Checking renamed or lingering images' in the output."
+
+
+def test_check_renamed_images_has_lingering(
+    mock_has_lingering_images: Tuple[Path, Path],
+) -> None:
+    """Test that warnings do appear when there are lingering images."""
+    # Get the current directory
+    currentdir, lingering_image = mock_has_lingering_images
+
+    # Run the check-renamed-images command
+    result = run_make("check-renamed-images", cwd=currentdir)
+
+    # Ensure it ran successfully and no warnings were issued
+    assert (
+        result.returncode == 0
+    ), f"Code: {result.returncode}. Output: {result.stdout}"
+
+    assert lingering_image.exists()
+
+    assert (
+        lingering_image.name in result.stdout
+    ), f"{lingering_image.name!r} not found in the output: {result.stdout}"
+
+    assert (
+        "⚠️ Lingering image detected" in result.stdout
+    ), f"Lingering image detected' no found in output: {result.stdout}"
+
+    assert (
+        "🗑️ Removed lingering image" not in result.stdout
+    ), f"'Removed lingering image' in the output: {result.stdout}"
+
+    assert (
+        "Checking renamed or lingering images" in result.stdout
+    ), "Expected to find 'Checking renamed or lingering images' in the output."
+
+
+def test_clear_renamed_images_has_lingering(
+    mock_has_lingering_images: Tuple[Path, Path],
+) -> None:
+    """Test that lingering images are removed."""
+    # Get the current directory
+    currentdir, lingering_image = mock_has_lingering_images
+
+    # Run the check-renamed-images command
+    result = run_make("clear-renamed-images", cwd=currentdir)
+
+    # Ensure it ran successfully and no warnings were issued
+    assert (
+        result.returncode == 0
+    ), f"Code: {result.returncode}. Output: {result.stdout}"
+
+    assert not lingering_image.exists()
+
+    assert (
+        lingering_image.name in result.stdout
+    ), f"{lingering_image.name!r} not found in the output: {result.stdout}"
+
+    assert (
+        "⚠️ Lingering image detected" not in result.stdout
+    ), f"Lingering image detected' no found in output: {result.stdout}"
+
+    assert (
+        "🗑️ Removed lingering image" in result.stdout
+    ), f"'Removed lingering image' in the output: {result.stdout}"
+
+    assert (
+        "Clearing renamed or lingering images" in result.stdout
+    ), "Expected to find 'Checking renamed or lingering images' in the output."
 
 
 def test_mock_synced_files(mock_synced_files: Tuple[Path, Path]) -> None:
