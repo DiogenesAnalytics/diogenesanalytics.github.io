@@ -11,6 +11,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "fixture: custom marker for fixture tests."
     )
+    config.addinivalue_line("markers", "git: custom marker for git tests.")
     config.addinivalue_line(
         "markers", "make: custom marker for Makefile tests."
     )

@@ -387,11 +387,13 @@ def mock_has_lingering_images(
     return currentdir, lingering_image, persisted_image
 
 
+@pytest.mark.git
 def test_git_installed() -> None:
     """Ensure that Git is installed and available."""
     assert shutil.which("git"), "Git is not installed or not found in PATH"
 
 
+@pytest.mark.git
 def test_git_remote_url() -> None:
     """Test that the git remote URL is valid and accessible."""
     remote_url = get_git_remote_url()
@@ -410,6 +412,9 @@ def test_git_remote_url() -> None:
     ), f"Expected GitHub URL, but got: {remote_url}"
 
 
+@pytest.mark.git
+@pytest.mark.make
+@pytest.mark.fixture
 def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
     """Test that none of the values in the print-config output are empty."""
     for value in print_config_output.values():
@@ -418,6 +423,9 @@ def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
         ), f"One of the config values is empty! Output:\n {print_config_output}"
 
 
+@pytest.mark.git
+@pytest.mark.make
+@pytest.mark.fixture
 def test_github_info_matches_docker_images(
     print_config_output: Dict[str, str]
 ) -> None:
@@ -444,6 +452,8 @@ def test_github_info_matches_docker_images(
     assert expected_testing_image == testing_image
 
 
+@pytest.mark.git
+@pytest.mark.make
 def test_github_user_extraction_https() -> None:
     """Test GitHub username extraction from HTTPS URL."""
     # setup url
@@ -462,6 +472,8 @@ def test_github_user_extraction_https() -> None:
     assert output == "user_name"
 
 
+@pytest.mark.git
+@pytest.mark.make
 def test_github_user_extraction_ssh() -> None:
     """Test GitHub username extraction from SSH URL."""
     # setup url
@@ -480,6 +492,8 @@ def test_github_user_extraction_ssh() -> None:
     assert output == "user_name"
 
 
+@pytest.mark.git
+@pytest.mark.make
 def test_github_user_extraction_fails() -> None:
     """Test GitHub username extraction from invalid URL."""
     # setup url
@@ -496,6 +510,7 @@ def test_github_user_extraction_fails() -> None:
     assert remote_url in output
 
 
+@pytest.mark.make
 def test_run_make_invalid_target() -> None:
     """Confirm missing target fails."""
     # run make on missing target
@@ -506,6 +521,7 @@ def test_run_make_invalid_target() -> None:
     assert "No rule to make target" in result.stderr
 
 
+@pytest.mark.make
 def test_run_make_dry_mode(monkeypatch: MonkeyPatch) -> None:
     """Test the behavior of `run_make` with dry-run mode enabled."""
 
@@ -529,6 +545,7 @@ def test_run_make_dry_mode(monkeypatch: MonkeyPatch) -> None:
     run_make("build", dry_mode=True)
 
 
+@pytest.mark.make
 def test_run_make_with_extra_args(monkeypatch: MonkeyPatch) -> None:
     """Test the `run_make` function with additional arguments."""
 
@@ -548,6 +565,7 @@ def test_run_make_with_extra_args(monkeypatch: MonkeyPatch) -> None:
     run_make("build", extra_args=["--jobs", "4"])
 
 
+@pytest.mark.make
 def test_check_docker_dry_run() -> None:
     """Test `check-docker` make target executes the expected command."""
     result = run_make("check-docker", dry_mode=True)
@@ -557,6 +575,7 @@ def test_check_docker_dry_run() -> None:
     assert result.returncode == 0
 
 
+@pytest.mark.make
 def test_check_deps_tests_without_notty_defined() -> None:
     """Test that NOTTY is correctly handled when not set."""
     result = run_make("check-deps-tests", dry_mode=True)
@@ -564,6 +583,7 @@ def test_check_deps_tests_without_notty_defined() -> None:
     assert "-it" in result.stdout  # Ensure -it is included
 
 
+@pytest.mark.make
 def test_check_deps_tests_with_notty() -> None:
     """Test that NOTTY is correctly handled in check-deps-tests."""
     result = run_make(
@@ -574,6 +594,7 @@ def test_check_deps_tests_with_notty() -> None:
     assert "-it" not in result.stdout  # Ensure -it is not included
 
 
+@pytest.mark.make
 def test_check_deps_tests_without_notty() -> None:
     """Test that NOTTY is correctly handled when false."""
     result = run_make(
@@ -583,6 +604,7 @@ def test_check_deps_tests_without_notty() -> None:
     assert "-it" in result.stdout  # Ensure -it is included
 
 
+@pytest.mark.make
 def test_build_jupyter_no_options() -> None:
     """Test build-jupyter target without DCKR_PULL or DCKR_NOCACHE options."""
     result = run_make("build-jupyter", dry_mode=True)
@@ -593,6 +615,7 @@ def test_build_jupyter_no_options() -> None:
     assert "--no-cache" not in result.stdout
 
 
+@pytest.mark.make
 def test_build_jupyter_with_nocache() -> None:
     """Test the build-jupyter target with DCKR_NOCACHE option."""
     result = run_make(
@@ -605,6 +628,7 @@ def test_build_jupyter_with_nocache() -> None:
     assert "docker pull" in result.stdout
 
 
+@pytest.mark.make
 def test_build_jupyter_with_no_pull() -> None:
     """Test build-jupyter target with no DCKR_PULL."""
     result = run_make(
@@ -617,6 +641,7 @@ def test_build_jupyter_with_no_pull() -> None:
     assert "--no-cache" not in result.stdout
 
 
+@pytest.mark.make
 def test_build_tests_no_options() -> None:
     """Test build-tests target without DCKR_PULL or DCKR_NOCACHE options."""
     result = run_make("build-tests", dry_mode=True)
@@ -627,6 +652,7 @@ def test_build_tests_no_options() -> None:
     assert "--no-cache" not in result.stdout
 
 
+@pytest.mark.make
 def test_build_tests_with_nocache() -> None:
     """Test the build-tests target with DCKR_NOCACHE option."""
     result = run_make(
@@ -639,6 +665,7 @@ def test_build_tests_with_nocache() -> None:
     assert "docker pull" in result.stdout
 
 
+@pytest.mark.make
 def test_build_tests_with_no_pull() -> None:
     """Test build-tests target with no DCKR_PULL."""
     result = run_make(
@@ -651,6 +678,7 @@ def test_build_tests_with_no_pull() -> None:
     assert "--no-cache" not in result.stdout
 
 
+@pytest.mark.make
 def test_use_vol_default() -> None:
     """Test that volume is mounted by default."""
     # run the make command with default environment (USE_VOL=true)
@@ -661,6 +689,7 @@ def test_use_vol_default() -> None:
     assert "-v" in result.stdout
 
 
+@pytest.mark.make
 def test_use_vol_off(current_directory: Path) -> None:
     """Test that volume is mounted by default."""
     # run the make command with default environment (USE_VOL=true)
@@ -672,6 +701,7 @@ def test_use_vol_off(current_directory: Path) -> None:
     assert str(current_directory) not in result.stdout
 
 
+@pytest.mark.make
 def test_use_usr_default() -> None:
     """Test that `--user` is enabled by default in the Makefile."""
     # Run the make command with default environment (USE_USR=true)
@@ -681,6 +711,7 @@ def test_use_usr_default() -> None:
     assert "--user" in result.stdout
 
 
+@pytest.mark.make
 def test_use_usr_off() -> None:
     """Test that `--user` is missing with USE_USR=false."""
     # Run the make command with default environment (USE_USR=true)
@@ -690,6 +721,7 @@ def test_use_usr_off() -> None:
     assert "--user" not in result.stdout
 
 
+@pytest.mark.make
 def test_mock_blog_repo(mock_blog_repo: Tuple[Path, Path, Path, Path]) -> None:
     """Test that mock_blog_repo correctly creates required directories."""
     currentdir, outdir, posts_dir, assets_dir = mock_blog_repo
@@ -706,6 +738,7 @@ def test_mock_blog_repo(mock_blog_repo: Tuple[Path, Path, Path, Path]) -> None:
     ).exists(), "Converted assets/images directory does not exist"
 
 
+@pytest.mark.make
 def test_mock_converted_files(
     mock_converted_files: Tuple[Path, Path],
 ) -> None:
@@ -717,6 +750,7 @@ def test_mock_converted_files(
     assert post_image.exists(), "Post image file was not created"
 
 
+@pytest.mark.make
 def test_mock_converted_env(
     mock_blog_repo: Tuple[Path, Path, Path, Path],
     mock_converted_env: List[str],
@@ -731,6 +765,7 @@ def test_mock_converted_env(
     assert f"OUTDR={outdir}" in mock_converted_env, "OUTDR not set correctly"
 
 
+@pytest.mark.make
 def test_basic_sync(
     mock_blog_repo: Tuple[Path, Path, Path],
     mock_converted_files: Tuple[Path, Path],
@@ -759,6 +794,7 @@ def test_basic_sync(
     ), "Expected log output not found"
 
 
+@pytest.mark.make
 def test_mock_git_repo(mock_git_repo: Tuple[Path, Path, Path, Path]) -> None:
     """Test that the mock Git repo is correctly initialized."""
     # get the currend temp dir
@@ -786,6 +822,7 @@ def test_mock_git_repo(mock_git_repo: Tuple[Path, Path, Path, Path]) -> None:
     ), "Git repository is not functioning correctly."
 
 
+@pytest.mark.make
 def test_check_renamed_no_changes(
     mock_synced_files: Tuple[Path, Path],
     mock_blog_repo: Tuple[Path, Path, Path, Path],
@@ -810,6 +847,7 @@ def test_check_renamed_no_changes(
     assert str(synced_markdown) not in result.stdout
 
 
+@pytest.mark.make
 def test_check_renamed_detects_lingering(
     mock_renamed_nb: Path,
     mock_blog_repo: Tuple[Path, Path, Path, Path],
@@ -835,6 +873,7 @@ def test_check_renamed_detects_lingering(
     assert lingering_post in result.stdout
 
 
+@pytest.mark.make
 def test_clear_renamed_no_changes(
     mock_synced_files: Tuple[Path, Path],
     mock_blog_repo: Tuple[Path, Path, Path, Path],
@@ -860,6 +899,7 @@ def test_clear_renamed_no_changes(
     assert str(synced_markdown) not in result.stdout
 
 
+@pytest.mark.make
 def test_clear_renamed_with_lingering_posts_and_images(
     mock_renamed_nb: Path,
     mock_blog_repo: Tuple[Path, Path, Path, Path],
@@ -909,6 +949,7 @@ def test_clear_renamed_with_lingering_posts_and_images(
     ), f"Expected 'Cleanup complete.' in output but got {result.stdout}"
 
 
+@pytest.mark.make
 def test_check_renamed_images_missing_outdir(
     mock_missing_outdir: Tuple[Path, Path, Path, Path]
 ) -> None:
@@ -924,6 +965,7 @@ def test_check_renamed_images_missing_outdir(
     assert "⚠️ Warning" in result.stdout
 
 
+@pytest.mark.make
 def test_clear_renamed_images_missing_outdir(
     mock_missing_outdir: Tuple[Path, Path, Path, Path]
 ) -> None:
@@ -939,6 +981,7 @@ def test_clear_renamed_images_missing_outdir(
     assert "⚠️ Warning" in result.stdout
 
 
+@pytest.mark.make
 def test_check_renamed_images_no_lingering(
     mock_no_lingering_images: Tuple[Path, Path, Path],
 ) -> None:
@@ -971,6 +1014,7 @@ def test_check_renamed_images_no_lingering(
     ), "Expected to find 'Checking renamed or lingering images' in the output."
 
 
+@pytest.mark.make
 def test_clear_renamed_images_no_lingering(
     mock_no_lingering_images: Tuple[Path, Path, Path],
 ) -> None:
@@ -1003,6 +1047,7 @@ def test_clear_renamed_images_no_lingering(
     ), "Expected to find 'Checking renamed or lingering images' in the output."
 
 
+@pytest.mark.make
 def test_check_renamed_images_has_lingering(
     mock_has_lingering_images: Tuple[Path, Path, Path],
 ) -> None:
@@ -1041,6 +1086,7 @@ def test_check_renamed_images_has_lingering(
     ), "Expected to find 'Checking renamed or lingering images' in the output."
 
 
+@pytest.mark.make
 def test_clear_renamed_images_has_lingering(
     mock_has_lingering_images: Tuple[Path, Path, Path],
 ) -> None:
@@ -1079,6 +1125,7 @@ def test_clear_renamed_images_has_lingering(
     ), "Expected to find 'Checking renamed or lingering images' in the output."
 
 
+@pytest.mark.make
 def test_mock_synced_files(mock_synced_files: Tuple[Path, Path]) -> None:
     """Test that files were correctly synced to _posts/ and assets/images/."""
     # get synced files
@@ -1088,6 +1135,7 @@ def test_mock_synced_files(mock_synced_files: Tuple[Path, Path]) -> None:
     assert synced_image.exists(), "Image file was not synced correctly."
 
 
+@pytest.mark.make
 def test_unsync(
     mock_blog_repo: Tuple[Path, Path, Path, Path],
     mock_synced_files: Tuple[Path, Path],
