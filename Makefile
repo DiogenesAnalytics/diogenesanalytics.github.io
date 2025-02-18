@@ -466,7 +466,7 @@ build-site:
 	           --rm \
 	           -v ${CURRENTDIR}:/srv/jekyll:Z \
 	           -p 4000 \
-	           jekyll/jekyll:4.2.0 \
+	           ${JKYLIMG} \
 	             jekyll build && \
 	echo "Site successfully built!"
 
