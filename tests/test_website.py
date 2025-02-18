@@ -3,12 +3,17 @@
 import filecmp
 import os
 import shutil
+import subprocess
+import time
 from pathlib import Path
+from typing import Generator
 from typing import List
 from typing import Set
 from typing import Tuple
 
 import pytest
+
+from tests.jekyll_server import JekyllServer
 
 
 def get_project_directory() -> Path:
@@ -121,6 +126,24 @@ def comp_dirs_test_data(tmp_path: Path) -> Tuple[Path, Path]:
     return src, dst
 
 
+@pytest.fixture(scope="function")
+def jekyll_server(
+    temp_project_dir: Path,
+) -> Generator[JekyllServer, None, None]:
+    """Fixture to create a JekyllServer instance, with auto cleanup after the test."""
+    # get instance
+    server = JekyllServer(cwd=temp_project_dir)
+
+    # start the server before the test
+    server.start()
+
+    # yield the server instance to the test
+    yield server
+
+    # cleanup (stop the server) after the test
+    server.stop()
+
+
 @pytest.mark.utils
 def test_compare_directories(
     comp_dirs_test_data: Tuple[Path, Path], ignore_dirs: Set[str]
@@ -165,3 +188,73 @@ def test_clone_directory(
 
     # no differences
     assert not differences, f"Differences found: {differences}"
+
+
+@pytest.mark.jekyll
+def test_jekyll_installed() -> None:
+    """Test that Jekyll is installed and accessible."""
+    try:
+        # run the `jekyll --version` command to check if Jekyll is installed
+        result = subprocess.run(
+            ["jekyll", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        # check the return code, it should be 0 if successful
+        assert (
+            result.returncode == 0
+        ), f"Jekyll command failed with return code {result.returncode}"
+
+        # check if Jekyll is in the version output
+        assert (
+            "jekyll" in result.stdout.lower()
+        ), "Jekyll is not installed or accessible"
+
+    except subprocess.CalledProcessError as e:
+        pytest.fail(f"Jekyll is not installed or not accessible: {e.stderr}")
+
+
+@pytest.mark.jekyll
+def test_jekyll_server_start_stop(jekyll_server: JekyllServer) -> None:
+    """Test that the Jekyll server starts and stops correctly."""
+    # Check that the process is running initially
+    assert jekyll_server.process is not None
+    assert jekyll_server.process.poll() is None
+
+    # sleep
+    time.sleep(0.1)
+
+    # Check that the server process is terminated
+    assert jekyll_server.process.poll() is None
+
+
+@pytest.mark.jekyll
+def test_jekyll_server_explicit_stop(jekyll_server: JekyllServer) -> None:
+    """Test the explicit stop method of the Jekyll server."""
+    # start the server
+    jekyll_server.start()
+
+    # check process running
+    assert jekyll_server.process is not None
+    assert jekyll_server.process.poll() is None
+
+    # explicitly stop the server
+    jekyll_server.stop()
+
+    # check that the server process is terminated
+    assert jekyll_server.process.poll() is not None
+
+
+@pytest.mark.jekyll
+def test_jekyll_server_initialize(
+    temp_project_dir: Path, jekyll_server: JekyllServer
+) -> None:
+    """Test the initialization of the JekyllServer class."""
+    assert jekyll_server.cwd == temp_project_dir
+    assert jekyll_server.host == "127.0.0.1"
+    assert jekyll_server.port == 4000
+    assert jekyll_server.source is None
+    assert jekyll_server.process is not None
