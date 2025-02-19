@@ -1,12 +1,80 @@
 """Tools for running Jekyll."""
 
 import subprocess
+from abc import ABC
+from abc import abstractmethod
+from functools import partial
+from http.server import HTTPServer
+from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
+from threading import Thread
+from typing import Any
 from typing import Optional
 from typing import Union
 
 
-class JekyllServer:
+class BaseServer(ABC):
+    """Abstract base class for different types of servers."""
+
+    def __init__(self, host: str = "127.0.0.1", port: int = 4000) -> None:
+        """Initialize the server."""
+        self.host = host
+        self.port = port
+
+    @abstractmethod
+    def start(self) -> None:
+        """Start the server."""
+        pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        """Stop the server."""
+        pass
+
+    def url(self) -> str:
+        """Return the full URL of the running server."""
+        return f"http://{self.host}:{self.port}/"
+
+
+class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
+    """Custom request handler to serve files from a specified directory."""
+
+    def __init__(
+        self, *args: Any, directory: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Initialize the request handler with a specific directory."""
+        super().__init__(*args, directory=directory, **kwargs)
+
+
+class SimpleHTTPServer(BaseServer):
+    """A lightweight HTTP server to serve static files from a directory."""
+
+    def __init__(
+        self, site_dir: Path, host: str = "127.0.0.1", port: int = 4000
+    ) -> None:
+        """Initialize the SimpleHTTPServer."""
+        super().__init__(host, port)
+        self.site_dir: Path = site_dir
+        self.server: Optional[HTTPServer] = None
+        self.thread: Optional[Thread] = None
+
+    def start(self) -> None:
+        """Start the HTTP server in a separate thread."""
+        handler = partial(
+            CustomHTTPRequestHandler, directory=str(self.site_dir)
+        )
+        self.server = HTTPServer((self.host, self.port), handler)
+        self.thread = Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    def stop(self) -> None:
+        """Stop the HTTP server and wait for the thread to exit."""
+        if self.server and self.thread:
+            self.server.shutdown()
+            self.thread.join()
+
+
+class JekyllServer(BaseServer):
     """Manages a Jekyll server instance using subprocess."""
 
     def __init__(
@@ -17,9 +85,11 @@ class JekyllServer:
         source: Optional[str] = None,
     ) -> None:
         """Setup Jekyll server."""
+        # call parents init method
+        super().__init__(host, port)
+
+        # instance specific setup
         self.cwd = Path(cwd)
-        self.host = host
-        self.port = port
         self.source = source
         self.process: Optional[subprocess.Popen[str]] = None
 
@@ -66,17 +136,12 @@ class JekyllServer:
     def stop(self) -> None:
         """Stop the Jekyll server."""
         if self.process:
-            # graceful shutdown
             self.process.terminate()
-
             try:
-                # wait for termination
                 self.process.wait(timeout=1)
             except subprocess.TimeoutExpired:
-                # force kill if it times out
                 self.process.kill()
 
-            # notify
             print("Jekyll server stopped.")
 
 

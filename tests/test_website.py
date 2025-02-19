@@ -12,8 +12,12 @@ from typing import Set
 from typing import Tuple
 
 import pytest
+import requests
+from pytest import TempPathFactory
+from seleniumbase import BaseCase
 
 from tests.jekyll_server import JekyllServer
+from tests.jekyll_server import SimpleHTTPServer
 from tests.jekyll_server import run_jekyll_build
 
 
@@ -93,13 +97,13 @@ def compare_directories(
     return differences
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def project_dir() -> Path:
     """Get the path of the project directory."""
     return get_project_directory()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def ignore_dirs() -> Set[str]:
     """Create set of all dirs to ignore."""
     return {
@@ -118,7 +122,7 @@ def temp_project_dir(
 ) -> Path:
     """Create a temporary directory to copy the source files for testing."""
     # create new temp web src dir
-    tmp_src = tmp_path / "web_src"
+    tmp_src = tmp_path / "web_src_function"
     tmp_src.mkdir(parents=True)
 
     # now clone
@@ -172,6 +176,40 @@ def jekyll_server(
     yield server
 
     # cleanup (stop the server) after the test
+    server.stop()
+
+
+@pytest.fixture(scope="session")
+def built_site(
+    tmp_path_factory: TempPathFactory, project_dir: Path, ignore_dirs: Set[str]
+) -> Path:
+    """Clone project dir, build Jekyll site, reuse it for all tests."""
+    # Create a temp directory for the Jekyll project
+    temp_project_dir = tmp_path_factory.mktemp("web_src_session")
+
+    # Clone the project files into the temp directory
+    clone_directory(project_dir, temp_project_dir, ignore_dirs)
+
+    # Run Jekyll build once
+    run_jekyll_build(temp_project_dir)
+
+    # Return the _site directory for serving
+    return temp_project_dir / "_site"
+
+
+@pytest.fixture(scope="session")
+def static_site_server(
+    built_site: Path,
+) -> Generator[SimpleHTTPServer, None, None]:
+    """Serve the pre-built Jekyll site using a simple HTTP server."""
+    # start server
+    server = SimpleHTTPServer(built_site)
+    server.start()
+
+    # generate
+    yield server
+
+    # cleanup
     server.stop()
 
 
@@ -311,3 +349,33 @@ def test_jekyll_build(temp_project_dir: Path) -> None:
     assert (
         _site_dir.exists() and _site_dir.is_dir()
     ), "_site directory was not created!"
+
+
+@pytest.mark.website
+def test_website_is_up(static_site_server: SimpleHTTPServer) -> None:
+    """Simple test to check if the website is up and accessible."""
+    try:
+        # send a GET request to the site
+        response = requests.get(static_site_server.url())
+
+        # confirm success
+        assert response.status_code == 200
+
+    # unaccessible
+    except requests.exceptions.ConnectionError:
+        pytest.fail("Failed to connect to Jekyll site.")
+
+
+@pytest.mark.website
+def test_homepage_title(
+    sb: BaseCase, static_site_server: SimpleHTTPServer
+) -> None:
+    """Basic test to check if the homepage displays."""
+    # load page into browser
+    sb.open(static_site_server.url())
+
+    # get title
+    title = sb.get_title()
+    assert (
+        "error" not in title.lower()
+    ), f"Page load error detected with title: {title}"
