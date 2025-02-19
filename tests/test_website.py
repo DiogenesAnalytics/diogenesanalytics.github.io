@@ -14,6 +14,7 @@ from typing import Tuple
 import pytest
 
 from tests.jekyll_server import JekyllServer
+from tests.jekyll_server import run_jekyll_build
 
 
 def get_project_directory() -> Path:
@@ -25,47 +26,68 @@ def get_project_directory() -> Path:
     return current_file_path.parents[1]
 
 
-def clone_directory(src: Path, dst: Path) -> None:
+def clone_directory(src: Path, dst: Path, ignore_dirs: Set[str]) -> None:
     """Clone a directory recursively to another location."""
     # ensure the destination directory exists
     if not dst.exists():
         dst.mkdir(parents=True)
 
     # copy everything in the source directory to the destination
-    shutil.copytree(src, dst, dirs_exist_ok=True)
+    shutil.copytree(
+        src,
+        dst,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns(*ignore_dirs),
+    )
 
 
 def compare_directories(
     src: Path, dst: Path, ignore_dirs: Set[str]
 ) -> List[Tuple[Path, Path]]:
-    """Recursively compare two directories and return differences."""
+    """Recursively compare two dirs and return diff while ignoring key dirs."""
+    # container for any diffs found
     differences = []
 
-    # Compare files in the current directory
+    # compare files in the current directory
     comparison = filecmp.dircmp(src, dst)
 
-    # Check for differing files
+    # ignore the specified directories at the root level
+    left_only_filtered = [
+        f for f in comparison.left_only if f not in ignore_dirs
+    ]
+    right_only_filtered = [
+        f for f in comparison.right_only if f not in ignore_dirs
+    ]
+
+    # check for differing files
     for file in comparison.diff_files:
         differences.append((src / file, dst / file))
 
-    # Check for files only in src (i.e., missing in dst)
-    for file in comparison.left_only:
+    # check for files only in src (i.e., missing in dst)
+    for file in left_only_filtered:
         differences.append((src / file, dst / file))
 
-    # Check for files only in dst (i.e., extra in dst)
-    for file in comparison.right_only:
+    # check for files only in dst (i.e., extra in dst)
+    for file in right_only_filtered:
         differences.append((src / file, dst / file))
 
-    # Check subdirectories
+    # check subdirectories
     for subdir_name, subdir_cmp in comparison.subdirs.items():
+        # ignore subdirs if in ignored dirs
         if subdir_name not in ignore_dirs:
+            # get diffs again
             subdir_differences = compare_directories(
                 Path(subdir_cmp.left), Path(subdir_cmp.right), ignore_dirs
             )
-            if subdir_differences:  # If subdir contains differences, add it
+
+            # diffs found ...
+            if subdir_differences:
+                # add to dirs with diffs
                 differences.append(
                     (Path(subdir_cmp.left), Path(subdir_cmp.right))
                 )
+
+                # then add their content's diffs
                 differences.extend(subdir_differences)
 
     return differences
@@ -80,18 +102,27 @@ def project_dir() -> Path:
 @pytest.fixture(scope="function")
 def ignore_dirs() -> Set[str]:
     """Create set of all dirs to ignore."""
-    return {".github", ".jekyll-cache", ".mypy_cache", ".pytest_cache"}
+    return {
+        "_site",
+        ".git",
+        ".github",
+        ".jekyll-cache",
+        ".mypy_cache",
+        ".pytest_cache",
+    }
 
 
 @pytest.fixture(scope="function")
-def temp_project_dir(tmp_path: Path, project_dir: Path) -> Path:
+def temp_project_dir(
+    tmp_path: Path, project_dir: Path, ignore_dirs: Set[str]
+) -> Path:
     """Create a temporary directory to copy the source files for testing."""
     # create new temp web src dir
     tmp_src = tmp_path / "web_src"
     tmp_src.mkdir(parents=True)
 
     # now clone
-    clone_directory(project_dir, tmp_src)
+    clone_directory(project_dir, tmp_src, ignore_dirs)
 
     # get tmp src path
     return tmp_src
@@ -186,8 +217,14 @@ def test_clone_directory(
         project_dir, temp_project_dir, ignore_dirs
     )
 
-    # no differences
+    # no differences should be found in the tracked files
     assert not differences, f"Differences found: {differences}"
+
+    # ensure ignored directories are indeed missing in the cloned directory
+    for ignored in ignore_dirs:
+        assert not (
+            temp_project_dir / ignored
+        ).exists(), f"Ignored directory {ignored} was copied!"
 
 
 @pytest.mark.jekyll
@@ -258,3 +295,19 @@ def test_jekyll_server_initialize(
     assert jekyll_server.port == 4000
     assert jekyll_server.source is None
     assert jekyll_server.process is not None
+
+
+@pytest.mark.jekyll
+def test_jekyll_build(temp_project_dir: Path) -> None:
+    """Test that `jekyll build` runs successfully and `_site` directory is created."""
+    # run the Jekyll build function
+    result = run_jekyll_build(temp_project_dir)
+
+    # ensure the build command executed successfully
+    assert result.returncode == 0, f"Jekyll build failed: {result.stderr}"
+
+    # verify that `_site` directory was created
+    _site_dir = temp_project_dir / "_site"
+    assert (
+        _site_dir.exists() and _site_dir.is_dir()
+    ), "_site directory was not created!"
