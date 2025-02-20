@@ -2,8 +2,10 @@
 
 import filecmp
 import os
+import random
 import shutil
 import subprocess
+import textwrap
 import time
 from pathlib import Path
 from typing import Generator
@@ -13,6 +15,7 @@ from typing import Tuple
 
 import pytest
 import requests
+from PIL import Image
 from pytest import TempPathFactory
 from seleniumbase import BaseCase
 
@@ -95,6 +98,54 @@ def compare_directories(
                 differences.extend(subdir_differences)
 
     return differences
+
+
+def generate_image(
+    width: int = 100, height: int = 100, seed: int = 42
+) -> Image.Image:
+    """Generates a deterministic in-memory black-and-white JPG image."""
+    # ensure deterministic output
+    random.seed(seed)
+
+    # "L" mode for grayscale (black and white)
+    img = Image.new("L", (width, height))
+
+    # load pixels
+    pixels = img.load()
+
+    # check pixels loaded correctly
+    if pixels is None:
+        raise ValueError("Failed to load image pixels.")
+
+    # generate random but deterministic grayscale value
+    for x in range(width):
+        for y in range(height):
+            # random gray value between 0 and 255
+            pixels[x, y] = random.randint(0, 255)
+
+    return img
+
+
+def generate_markdown_post() -> str:
+    """Generates basic Markdown post without an image reference."""
+    # store content without indentation
+    content = textwrap.dedent(
+        """\
+        ---
+        layout: article
+        title: Test Post
+        custom_css: article.css
+        include_mathjax: true
+        ---
+
+        [No Image]
+
+        # This is a test post
+        This is a sample post for testing purposes.
+    """
+    )
+
+    return content
 
 
 @pytest.fixture(scope="session")
@@ -180,21 +231,87 @@ def jekyll_server(
 
 
 @pytest.fixture(scope="session")
-def built_site(
+def session_project_dir(
     tmp_path_factory: TempPathFactory, project_dir: Path, ignore_dirs: Set[str]
 ) -> Path:
-    """Clone project dir, build Jekyll site, reuse it for all tests."""
-    # Create a temp directory for the Jekyll project
-    temp_project_dir = tmp_path_factory.mktemp("web_src_session")
+    """Temporary directory for the Jekyll project to be used during the session."""
+    # setup session dir
+    session_dir = tmp_path_factory.mktemp("session_web_src")
 
-    # Clone the project files into the temp directory
-    clone_directory(project_dir, temp_project_dir, ignore_dirs)
+    # now clone from project dir
+    clone_directory(project_dir, session_dir, ignore_dirs)
+
+    return session_dir
+
+
+@pytest.fixture(scope="session")
+def mock_post_with_image(session_project_dir: Path) -> Tuple[Path, Path, Path]:
+    """Creates a mock blog post with an associated image in the correct directories."""
+    # define paths
+    image_name = "test_image.jpg"
+    image_path = session_project_dir / "assets/images" / image_name
+    post_path = session_project_dir / "_posts/01-01-01-test-post.md"
+
+    # ensure directories exist
+    image_path.parent.mkdir(parents=True, exist_ok=True)
+    post_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # write the image file
+    generate_image().save(image_path, format="JPEG")
+
+    # define the image reference
+    image_reference = (
+        f"![Image](/{image_path.relative_to(session_project_dir)})"
+    )
+
+    # replace the placeholder "[no image]" in the markdown file
+    updated_post = generate_markdown_post().replace(
+        "[No Image]", image_reference
+    )
+
+    # write the modified markdown post
+    post_path.write_text(updated_post, encoding="utf-8")
+
+    return session_project_dir, post_path, image_path
+
+
+@pytest.fixture(scope="session")
+def built_site(mock_post_with_image: Tuple[Path, Path, Path]) -> Path:
+    """Clone project dir, build Jekyll site, reuse it for all tests."""
+    # get session project dir with mocked post/image
+    session_dir, *_ = mock_post_with_image
 
     # Run Jekyll build once
-    run_jekyll_build(temp_project_dir)
+    run_jekyll_build(session_dir)
 
     # Return the _site directory for serving
-    return temp_project_dir / "_site"
+    return session_dir / "_site"
+
+
+@pytest.fixture
+def built_post_path(
+    mock_post_with_image: Tuple[Path, Path, Path], built_site: Path
+) -> Path:
+    """Returns the path to the built post HTML file in the _site directory."""
+    # get session project dir and post path from the mock_post_with_image fixture
+    _, post_path, _ = mock_post_with_image
+
+    # get the filename without extension (e.g., 01-01-01-test-post)
+    post_filename = post_path.stem
+
+    # split by '-' to get the year, month, day, and title
+    date_parts = post_filename.split("-")
+    year, month, day = date_parts[0], date_parts[1], date_parts[2]
+
+    # join the remaining parts as the title
+    title = "-".join(date_parts[3:])
+
+    # construct the expected path in the _site directory (Y/M/D/title format)
+    built_post_path = (
+        built_site / "blog" / f"20{year}/{month}/{day}/{title}.html"
+    )
+
+    return built_post_path
 
 
 @pytest.fixture(scope="session")
@@ -211,6 +328,36 @@ def static_site_server(
 
     # cleanup
     server.stop()
+
+
+@pytest.fixture
+def post_url(
+    built_post_path: Path, static_site_server: SimpleHTTPServer
+) -> str:
+    """Returns the full URL of the built post."""
+    # server url
+    url = static_site_server.url()
+
+    # search for the '_site' directory in the path and extract the part below it
+    try:
+        site_index = built_post_path.parts.index("_site")
+    except ValueError as err:
+        raise ValueError(
+            f"Expected '_site' directory not found in the path {built_post_path}"
+        ) from err
+
+    # get the relative path below the '_site' directory
+    relative_parts = built_post_path.parts[site_index + 1 :]
+
+    # ensure relative path includes: 'blog', year, month, day, and title
+    if len(relative_parts) < 4:
+        raise ValueError(f"Unexpected path structure: {relative_parts}")
+
+    # reconstruct the URL with blog, year, month, day, and title
+    blog_dir, year, month, day, *title_parts = relative_parts
+    post_url = f"{url}/{blog_dir}/{year}/{month}/{day}/{'-'.join(title_parts)}"
+
+    return post_url
 
 
 @pytest.mark.utils
@@ -245,6 +392,19 @@ def test_compare_directories(
         assert expected == actual, f"Expected {expected} but got {actual}"
 
 
+@pytest.mark.utils
+def test_generate_image_determinism() -> None:
+    """Make sure image generating util is detrministic."""
+    # generate identical deterministic images
+    img1 = generate_image(seed=42)
+    img2 = generate_image(seed=42)
+
+    # check identical
+    assert list(img1.getdata()) == list(
+        img2.getdata()
+    ), "Images with the same seed should be identical."
+
+
 @pytest.mark.fixture
 def test_clone_directory(
     temp_project_dir: Path, project_dir: Path, ignore_dirs: Set[str]
@@ -263,6 +423,59 @@ def test_clone_directory(
         assert not (
             temp_project_dir / ignored
         ).exists(), f"Ignored directory {ignored} was copied!"
+
+
+@pytest.mark.fixture
+def test_mock_post_with_image(
+    mock_post_with_image: Tuple[Path, Path, Path]
+) -> None:
+    """Ensures that the post and image are created in the correct directories."""
+    # get post/image paths
+    _, post_path, image_path = mock_post_with_image
+
+    # check they exist
+    assert image_path.exists(), "Image file was not created!"
+    assert post_path.exists(), "Markdown post was not created!"
+
+    # get content
+    content = post_path.read_text()
+
+    # make sure content looks right
+    assert (
+        "![Image](/assets/images/test_image.jpg)" in content
+    ), "Markdown file does not reference the image correctly!"
+    assert (
+        "[no image]" not in content
+    ), "Placeholder '[no image]' was not removed!"
+
+
+@pytest.mark.fixture
+def test_post_built(
+    built_post_path: Path, mock_post_with_image: Tuple[Path, Path, Path]
+) -> None:
+    """Test if the markdown post is converted to an HTML page after Jekyll build."""
+    # get image file path
+    *_, image_path = mock_post_with_image
+
+    # Check if the HTML file exists
+    assert (
+        built_post_path.exists()
+    ), f"Expected HTML file {built_post_path} was not generated by Jekyll"
+
+    # Optionally, you can check the contents of the HTML file
+    # e.g., check if certain text is present in the generated HTML
+    with open(built_post_path, "r", encoding="utf-8") as html_file:
+        html_content = html_file.read()
+
+    # Check that the content contains the title from the markdown post
+    assert (
+        "Test Post" in html_content
+    ), "HTML content does not contain expected title"
+
+    # Optionally, check for image inclusion in the HTML content
+    assert (
+        image_path.name in html_content
+    ), "HTML content does not include the image"
 
 
 @pytest.mark.jekyll
@@ -379,3 +592,18 @@ def test_homepage_title(
     assert (
         "error" not in title.lower()
     ), f"Page load error detected with title: {title}"
+
+
+@pytest.mark.website
+def test_post_accessible(post_url: str) -> None:
+    """Simple test to check if test blog post is available."""
+    try:
+        # send a GET request to the site
+        response = requests.get(post_url)
+
+        # confirm success
+        assert response.status_code == 200
+
+    # unaccessible
+    except requests.exceptions.ConnectionError:
+        pytest.fail("Failed to connect to Jekyll site.")
