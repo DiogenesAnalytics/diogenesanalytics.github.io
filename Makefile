@@ -640,7 +640,7 @@ tests: pytest lint
 
 # run pytest in docker container
 pytest:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} pytest
+	@ ${DCKRTST} ${DCKRIMG_TESTS} pytest --reuse-session
 
 # run isort in docker container
 isort:
