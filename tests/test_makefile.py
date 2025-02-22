@@ -1171,3 +1171,20 @@ def test_unsync(
     assert (
         "Unsyncing complete." in result.stdout
     ), "Expected 'Unsyncing complete.' message not found."
+
+
+@pytest.mark.make
+def test_check_workdir_matches_dckrsrc(
+    print_config_output: Dict[str, str]
+) -> None:
+    """Test that the working directory inside the container matches DCKRSRC."""
+    # set the expected working directory
+    expected_workdir = (
+        f"/usr/local/src/{print_config_output['Repository Name']}"
+    )
+
+    # pull actual DCKRSRC from config output
+    actual_workdir = print_config_output["Docker Source Path"]
+
+    # make sure they match
+    assert expected_workdir == actual_workdir

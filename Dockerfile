@@ -14,6 +14,9 @@ RUN pip install git+https://github.com/DiogenesAnalytics/blog_utils
 # test base image
 FROM python:3.11 AS testing
 
+# define the build arguments
+ARG DCKRSRC
+
 # install necessary dependencies
 RUN apt-get update \
     && apt-get install -y \
@@ -45,7 +48,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
     && rm -rf /var/lib/apt/lists/*
 
 # set workdir
-WORKDIR /usr/local/src/blog_template
+WORKDIR ${DCKRSRC}
 
 # copy source
 COPY . .

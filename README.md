@@ -115,6 +115,7 @@ command, simply run `make -n [COMMAND]`.
 + `check-image-jupyter`: check if the Jupyter Docker image exists
 + `check-image-tests`: check if the Test Docker image exists
 + `check-images`: check all docker images
++ `check-workdir-tests`: confirm working dir is correct in tests image
 + `check-deps-jupyter`: check Jupyter dependencies inside Docker
 + `check-deps-tests`: check test dependencies inside Docker
 + `check-all`: check all dependencies (Docker, Jupyter, Tests)

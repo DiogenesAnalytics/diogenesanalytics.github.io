@@ -1,5 +1,5 @@
 .PHONY: all check-docker check-image-jupyter check-image-tests check-images \
-        check-deps-jupyter check-deps-tests check-all build-jupyter \
+        check-workdir-tests check-deps-jupyter check-deps-tests check-all build-jupyter \
         build-tests jupyter execute convert check-renamed-images \
         check-renamed-posts check-renamed clear-renamed-images \
         clear-renamed-posts clear-renamed sync sync-check jekyll build-site \
@@ -16,6 +16,7 @@
 # make check-image-jupyter  # check if the Jupyter Docker image exists
 # make check-image-tests    # check if the Test Docker image exists
 # make check-images         # check all docker images
+# make check-workdir-tests  # confirm working dir is correct
 # make check-deps-jupyter   # check Jupyter dependencies inside Docker
 # make check-deps-tests     # check test dependencies inside Docker
 # make check-all            # check all dependencies (Docker, Jupyter, Tests)
@@ -175,7 +176,7 @@ DCKRIMG_TESTS ?= ${DCKRIMG_BASE}_testing
 
 # Define the docker build command with optional --no-cache
 define DOCKER_BUILD
-	docker build -t $1 . --load --target $2 \
+	docker build --build-arg DCKRSRC=${DCKRSRC} -t $1 . --load --target $2 \
 	  $(if $(filter true,$(DCKR_NOCACHE)),--no-cache)
 endef
 
@@ -274,7 +275,7 @@ check-docker:
 
 # check if jupyter docker image exists
 check-image-jupyter: check-docker
-	@if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
+	@ if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
 	    grep -q "^${DCKRIMG_JPYTR}$$"; then \
 	  echo "❌ Error: Docker image '${DCKRIMG_JPYTR}' is missing."; \
 	  echo "Please build it using 'make build-jupyter'."; \
@@ -285,7 +286,7 @@ check-image-jupyter: check-docker
 
 # check if test docker image exists
 check-image-tests: check-docker
-	@if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
+	@ if ! docker images --format "{{.Repository}}:{{.Tag}}" | \
 	    grep -q "^${DCKRIMG_TESTS}$$"; then \
 	  echo "❌ Error: Docker image '${DCKRIMG_TESTS}' is missing."; \
 	  echo "Please build it using 'make build-tests'."; \
@@ -297,6 +298,17 @@ check-image-tests: check-docker
 # crouping docker image checks
 check-docker-images: check-docker check-image-jupyter check-image-tests
 
+# confirm working dir is correct
+check-workdir-tests:
+	@ echo "Checking if the working directory inside the container matches ${DCKRSRC}..."
+	@ container_workdir=$$(docker run --rm ${DCKRIMG_TESTS} pwd); \
+	if [ "$$container_workdir" = "$(DCKRSRC)" ]; then \
+	  echo "✅ Working directory matches ${DCKRSRC}."; \
+	else \
+	  echo "❌ Working directory does NOT match ${DCKRSRC}. Current: $$container_workdir"; \
+	  exit 1; \
+	fi
+
 # check jupyter dependencies inside docker
 check-deps-jupyter: check-image-jupyter
 	@ echo "Checking Jupyter dependencies inside Docker..."
@@ -307,7 +319,7 @@ check-deps-jupyter: check-image-jupyter
 	  echo '✅ nbconvert is installed!' || echo '❌ nbconvert is missing.'"
 
 # check if test docker image exists
-check-deps-tests: check-image-tests
+check-deps-tests: check-image-tests check-workdir-tests
 	@ echo "Checking test dependencies inside Docker..."
 	@ ${DCKRTST} ${DCKRIMG_TESTS} sh -c "\
 	  command -v bash > /dev/null && \
@@ -565,7 +577,7 @@ restart-containers: stop-containers containers
 # unsync all converted files back to original locations
 unsync:
 	@ echo "Removing all jupyter converted files from _posts/ and assets/ dirs:"
-	@untracked_files="$$(git ls-files --others --exclude-standard)"; \
+	@ untracked_files="$$(git ls-files --others --exclude-standard)"; \
 	posts=$$(echo "$${untracked_files}" | grep "_posts" | grep ".md"); \
 	assets=$$(echo "$${untracked_files}" | grep "assets/images" | \
 	          grep ".png"); \

@@ -67,6 +67,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      # Get repo name
+      - name: Set REPO_NAME variable
+        id: repo_name
+        run: echo "REPO_NAME=$(basename $GITHUB_REPOSITORY)" >> $GITHUB_ENV
+
       # Build and push Docker images with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Jupyter Docker image
@@ -92,6 +97,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           target: testing
+          build-args: |
+            DCKRSRC=/usr/local/src/${{ env.REPO_NAME }}
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
