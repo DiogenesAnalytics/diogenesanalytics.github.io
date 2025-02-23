@@ -3,8 +3,11 @@ permalink: /blog/:year/:month/:day/:title
 pages_dir: /pages
 high_res_image: "/assets/images/diogenes_art.q75.webp"
 low_res_image: "/assets/images/diogenes_art.q0.webp"
-default_image: "/assets/images/diogenes_preview.q75.webp"
+default_image: "/assets/images/diogenes_art.q75.webp"
 url: "https://yourwebsite.com"
+contacts:
+  business: "/business-contact/"
+  personal: "/personal-contact/"
 exclude:
   - CNAME
   - Dockerfile

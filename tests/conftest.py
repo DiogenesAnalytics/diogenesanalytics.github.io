@@ -6,6 +6,9 @@ import pytest
 def pytest_configure(config: pytest.Config) -> None:
     """For configuring pytest with custom markers."""
     config.addinivalue_line(
+        "markers", "config: custom marker for Jekyll config file tests."
+    )
+    config.addinivalue_line(
         "markers", "debug: custom marker for debugging tests."
     )
     config.addinivalue_line(

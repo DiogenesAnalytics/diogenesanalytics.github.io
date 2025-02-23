@@ -7,14 +7,20 @@ import shutil
 import subprocess
 import textwrap
 import time
+import warnings
 from pathlib import Path
+from typing import Any
+from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Set
 from typing import Tuple
+from urllib.parse import urljoin
+from urllib.parse import urlparse
 
 import pytest
 import requests
+import yaml
 from PIL import Image
 from pytest import TempPathFactory
 from seleniumbase import BaseCase
@@ -181,6 +187,23 @@ def temp_project_dir(
 
     # get tmp src path
     return tmp_src
+
+
+@pytest.fixture(scope="function")
+def jekyll_user_config(temp_project_dir: Path) -> Dict[str, Any]:
+    """Fixture for Jekyll _config.yml as a dictionary."""
+    # set path
+    config_path = temp_project_dir / "_config.yml"
+
+    # check if the _config.yml file exists in the working directory
+    if not config_path.exists():
+        raise FileNotFoundError(f"{config_path} not found.")
+
+    # open and read the file
+    with open(config_path, "r") as file:
+        config: Dict[str, Any] = yaml.safe_load(file)
+
+    return config
 
 
 @pytest.fixture(scope="function")
@@ -607,3 +630,136 @@ def test_post_accessible(post_url: str) -> None:
     # unaccessible
     except requests.exceptions.ConnectionError:
         pytest.fail("Failed to connect to Jekyll site.")
+
+
+@pytest.mark.config
+def test_config_keys_exist(jekyll_user_config: Dict[str, str]) -> None:
+    """Test that the specified keys exist in the _config.yml configuration."""
+    # these are required to be in the Jekyll config (or the site won't work right)
+    required_keys = [
+        "markdown",
+        "permalink",
+        "pages_dir",
+        "high_res_image",
+        "low_res_image",
+        "default_image",
+        "url",
+        "contacts",
+    ]
+
+    # these are technically optional (but recommended depending on use case)
+    optional_keys = ["social", "exclude"]
+
+    # assert that each required key exists in the loaded config
+    for key in required_keys:
+        assert key in jekyll_user_config, f"Missing required key: {key}"
+
+    # check for optional keys and issue warnings if missing
+    for key in optional_keys:
+        if key not in jekyll_user_config:
+            warnings.warn(
+                f"Missing optional key: {key}", UserWarning, stacklevel=2
+            )
+
+
+@pytest.mark.config
+def test_contacts_key_structure(jekyll_user_config: Dict[str, str]) -> None:
+    """Test that the 'contacts' key exists and has the expected structure."""
+    # get contacts
+    contacts: Any = jekyll_user_config.get("contacts", {})
+
+    # ensure 'contacts' is a dictionary
+    assert isinstance(contacts, dict), "'contacts' should be a dictionary."
+
+
+@pytest.mark.config
+def test_exclude_key_structure(jekyll_user_config: Dict[str, str]) -> None:
+    """Test that the 'exclude' key exists and is a list."""
+    # get exclude
+    exclude: Any = jekyll_user_config.get("exclude", [])
+
+    # Ensure 'exclude' is a list
+    assert isinstance(exclude, list), "'exclude' should be a list."
+
+
+@pytest.mark.website
+def test_contact_url_matches_config(
+    sb: BaseCase,
+    static_site_server: SimpleHTTPServer,
+    jekyll_user_config: Dict[str, str],
+) -> None:
+    """Test the contact section in the Jekyll user config matches the rendered site."""
+    # load page into browser
+    sb.open(static_site_server.url())
+
+    # find all links on the page
+    links = sb.find_elements("a")
+
+    # Wait for the "Contact" link to be present on the page
+    sb.wait_for_element("a")  # Wait for at least one link to appear on the page
+
+    # search for the "Contact" link by its visible text
+    contact_link = None
+    for link in links:
+        if link.text == "Contact":
+            contact_link = link
+            break
+
+    # assert that the "Contact" link was found
+    assert contact_link is not None, "Contact link not found!"
+
+    # get the href attribute of the found link
+    contact_url = contact_link.get_attribute("href")
+
+    # parse the full URL to get the relative path
+    parsed_url = urlparse(contact_url)
+    relative_url = parsed_url.path
+
+    # get contacts
+    contacts = jekyll_user_config["contacts"]
+
+    # confirm either of two options
+    assert ("/pages/contact.html" == relative_url and len(contacts) > 1) or (
+        len(contacts) == 1
+    ), (
+        "Expected contact URL to be '/pages/contact.html' "
+        f"or a single URL from config, but got {relative_url}"
+    )
+
+
+@pytest.mark.website
+def test_multiple_contact_links(
+    sb: BaseCase,
+    static_site_server: SimpleHTTPServer,
+    jekyll_user_config: Dict[str, str],
+) -> None:
+    """Test multiple contact links in /pages/contact.html."""
+    # get contact config entries
+    contacts: Any = jekyll_user_config.get("contacts", {})
+
+    # only run the test if the contacts list has more than 1 entry
+    if isinstance(contacts, dict) and len(contacts) > 1:
+        # safely join the base URL with the /pages/contacts.html path
+        contacts_url = urljoin(static_site_server.url(), "/pages/contact.html")
+
+        # load the contacts page into the browser
+        sb.open(contacts_url)
+
+        # find all links on the contacts page
+        contact_links = sb.find_elements("ul.content-scroll a")
+
+        # assert that there are multiple "Contact" links
+        assert len(contact_links) > 1, (
+            "Expected multiple 'Contact' links, but found "
+            f"{len(contact_links)} links: {contact_links}"
+        )
+
+        # extract the contact names from the config
+        contact_names = list(contacts.keys())
+
+        # check that each contact link text matches
+        for link in contact_links:
+            # Check if link text matches any of the contact names
+            assert any(
+                name in link.text.lower() for name in contact_names
+            ), f"Link text {link.text!r} does not match config contact keys."

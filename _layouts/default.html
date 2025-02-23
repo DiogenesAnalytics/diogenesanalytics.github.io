@@ -112,11 +112,21 @@ include_mathjax: false
         <div class="background high-res"></div>
         {% endif -%}
         <header class="header">
+            {% comment %}
+            Logic for determining contact URL.
+            {% endcomment %}
+            {% assign contact_count = site.contacts | size %}
+            {% if contact_count > 1 %}
+              {% assign contact_url = site.pages_dir | append: "/contact.html" %}
+            {% else %}
+              {% assign first_contact = site.contacts | first %}
+              {% assign contact_url = first_contact[1] %}
+            {% endif %}
             {% if site.social %}
             <p>
                 <a href="/">Home</a>
                 <a href="{{ site.pages_dir }}/blog.html">Blog</a>
-                <a href="/contact/">Contact</a>
+                <a href="{{ contact_url }}">Contact</a>
             </p>
             <p class="social-media-links">
                 {% for item in site.social %} {% if item[1] %}
@@ -132,7 +142,7 @@ include_mathjax: false
             {% else %}
             <p><a href="/">Home</a></p>
             <p><a href="{{ site.pages_dir }}/blog.html">Blog</a></p>
-            <p><a href="/contact/">Contact</a></p>
+            <p><a href="{{ contact_url }}">Contact</a></p>
             {% endif %}
         </header>
 {{ content }}
