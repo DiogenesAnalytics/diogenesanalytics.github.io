@@ -102,6 +102,31 @@ excerpt: "My custom excerpt that previews what the article is about"
 *NOTE*: if the *excerpt* does not render correct automatically, you can always
 set it manually in the *Jekyll YAML front matter*.
 
+### Contact URL Configuration
+The Jekyll template allows you to configure multiple **contact** links that will
+be displayed on the `/pages/contact.html` page. To enable and customize these
+links, you will need to modify the `contacts` section of the `_config.yml` file
+like so:
+```yml
+contacts:
+  business: "/business-contact/"
+  personal: "/personal-contact/"
+```
+
+Each key in the `contacts` dictionary represents the name of the contact, and
+the corresponding value is the URL (can be *relative URL*) where the contact
+form can be reached. If only **one link** is used then that link will be used
+as the reference in the *"Contact"* link in the header of the website:
+```yml
+contacts:
+  basic_contact: "/contact/"
+```
+
+In other words, no *additional contact* page will be referenced and when users
+click the *"Contact"* link in the header of the website, that link will
+reference the single URL (relative or absolute) listed in the `_config.yml`
+file.
+
 ## Make
 Here we will document the different `make` commands defined in the `Makefile`.
 All *commands* (excluding the `all` command which is simply executed by
