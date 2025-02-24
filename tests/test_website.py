@@ -773,6 +773,9 @@ def test_multiple_contact_links(
 
     # only run the test if the contacts list has more than 1 entry
     if isinstance(contacts, dict) and len(contacts) > 1:
+        # notify test is executing
+        print(f"Found multiple contact links: {contacts}")
+
         # safely join the base URL with the /pages/contacts.html path
         contacts_url = urljoin(static_site_server.url(), "/pages/contact.html")
 
@@ -811,6 +814,9 @@ def test_social_links_displayed(
 
     # only run the test if socials are present
     if isinstance(social, dict) and len(social) > 0:
+        # notify test is executing
+        print(f"Found social links: {social}")
+
         # load the contacts page into the browser
         sb.open(static_site_server.url())
 
