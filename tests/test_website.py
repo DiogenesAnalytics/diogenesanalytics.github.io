@@ -23,6 +23,7 @@ import requests
 import yaml
 from PIL import Image
 from pytest import TempPathFactory
+from selenium.webdriver.common.by import By
 from seleniumbase import BaseCase
 
 from tests.jekyll_server import JekyllServer
@@ -632,7 +633,6 @@ def test_post_accessible(post_url: str) -> None:
         pytest.fail("Failed to connect to Jekyll site.")
 
 
-@pytest.mark.debug
 @pytest.mark.website
 def test_blog_image_loaded(
     sb: BaseCase,
@@ -697,6 +697,16 @@ def test_contacts_key_structure(jekyll_user_config: Dict[str, str]) -> None:
 
 
 @pytest.mark.config
+def test_socials_key_structure(jekyll_user_config: Dict[str, str]) -> None:
+    """Test that the 'social' key exists and has the expected structure."""
+    # get contacts
+    social: Any = jekyll_user_config.get("social", {})
+
+    # ensure 'contacts' is a dictionary
+    assert isinstance(social, dict), "'social' should be a dictionary."
+
+
+@pytest.mark.config
 def test_exclude_key_structure(jekyll_user_config: Dict[str, str]) -> None:
     """Test that the 'exclude' key exists and is a list."""
     # get exclude
@@ -712,7 +722,7 @@ def test_contact_url_matches_config(
     static_site_server: SimpleHTTPServer,
     jekyll_user_config: Dict[str, str],
 ) -> None:
-    """Test the contact section in the Jekyll user config matches the rendered site."""
+    """Test user config contacts match the rendered site."""
     # load page into browser
     sb.open(static_site_server.url())
 
@@ -787,3 +797,64 @@ def test_multiple_contact_links(
             assert any(
                 name in link.text.lower() for name in contact_names
             ), f"Link text {link.text!r} does not match config contact keys."
+
+
+@pytest.mark.website
+def test_social_links_displayed(
+    sb: BaseCase,
+    static_site_server: SimpleHTTPServer,
+    jekyll_user_config: Dict[str, str],
+) -> None:
+    """Test multiple social links in header."""
+    # get social config entries
+    social: Any = jekyll_user_config.get("social", {})
+
+    # only run the test if socials are present
+    if isinstance(social, dict) and len(social) > 0:
+        # load the contacts page into the browser
+        sb.open(static_site_server.url())
+
+        # find social links container
+        social_media_container = sb.find_element("p.social-media-links")
+
+        # find all <a> tags within the <p> tag
+        links = social_media_container.find_elements(By.TAG_NAME, "a")
+
+        # assert that there are social media links
+        assert (
+            len(links) > 0
+        ), f"Expected social media links but found {len(links)} links: {links}"
+
+        # sort actual links by their <i> tag's class (fab fa-{key})
+        sorted_links = sorted(
+            links,
+            key=lambda lnk: lnk.find_element(By.TAG_NAME, "i")
+            .get_attribute("class")
+            .split()[-1],
+        )
+
+        # sort expected socials by key (platform name)
+        sorted_socials = sorted(social.items())
+
+        # compare expected vs. actual values in order
+        for (expected_key, expected_url), link in zip(
+            sorted_socials, sorted_links, strict=True
+        ):
+            # get displayed icon and corresponding url from page
+            actual_href = link.get_attribute("href")
+            actual_icon_class = link.find_element(
+                By.TAG_NAME, "i"
+            ).get_attribute("class")
+
+            # confirm urls match
+            assert actual_href == expected_url, (
+                f"Expected href '{expected_url!r}', "
+                f"but found '{actual_href!r}' for {expected_key!r}."
+            )
+
+            # check icons match config platform name
+            expected_icon_class = f"fab fa-{expected_key}"
+            assert expected_icon_class in actual_icon_class, (
+                f"Expected icon class '{expected_icon_class!r}', but found "
+                f"'{actual_icon_class!r}'."
+            )

@@ -8,6 +8,10 @@ url: "https://yourwebsite.com"
 contacts:
   business: "/business-contact/"
   personal: "/personal-contact/"
+social:
+  x-twitter: "https://twitter.com/yourprofile"
+  instagram: "https://instagram.com/yourprofile"
+  youtube: "https://youtube.com/yourprofile"
 exclude:
   - CNAME
   - Dockerfile
