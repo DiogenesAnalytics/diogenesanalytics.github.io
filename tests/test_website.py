@@ -146,7 +146,7 @@ def generate_markdown_post() -> str:
 
         [No Image]
 
-        # This is a test post
+        ## This is a test post
         This is a sample post for testing purposes.
     """
     )
@@ -630,6 +630,30 @@ def test_post_accessible(post_url: str) -> None:
     # unaccessible
     except requests.exceptions.ConnectionError:
         pytest.fail("Failed to connect to Jekyll site.")
+
+
+@pytest.mark.debug
+@pytest.mark.website
+def test_blog_image_loaded(
+    sb: BaseCase,
+    post_url: str,
+) -> None:
+    """Test to check if an image is loaded on the homepage."""
+    # load page into browser
+    sb.open(post_url)
+
+    # try to find the image by its tag (adjust the selector as needed)
+    image = sb.find_element("img")
+
+    # check if the image exists and is not broken
+    assert image is not None, "Image not found on the page."
+    assert image.get_attribute("src") != "", "Image source is empty."
+
+    # optionally, you can check if the image is not missing
+    image_src = image.get_attribute("src")
+    assert image_src.startswith("http") or image_src.startswith(
+        "/"
+    ), "Image source URL is not valid."
 
 
 @pytest.mark.config

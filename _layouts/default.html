@@ -203,4 +203,27 @@ include_mathjax: false
         });
     </script>
     {%- endif %}
+    {% if page.custom_css == "article.css" %}
+    <script>
+        // Your JavaScript code for 'article.css'
+        document.addEventListener("DOMContentLoaded", function () {
+            // Select all images inside .article
+            const images = document.querySelectorAll(".article img");
+
+            images.forEach((img) => {
+                // If the image is already cached by the browser
+                if (img.complete && img.naturalHeight !== 0) {
+                    img.classList.add("loaded");
+                } else {
+                    img.addEventListener("load", function () {
+                        img.classList.add("loaded");
+                    });
+                    img.addEventListener("error", function () {
+                        console.error("Error loading image:", img.src);
+                    });
+                }
+            });
+        });
+    </script>
+    {% endif %}
 </html>
