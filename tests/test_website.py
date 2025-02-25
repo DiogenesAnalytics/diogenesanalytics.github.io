@@ -5,11 +5,11 @@ import os
 import random
 import shutil
 import subprocess
-import textwrap
 import time
 import warnings
 from pathlib import Path
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -17,10 +17,12 @@ from typing import Set
 from typing import Tuple
 from urllib.parse import urljoin
 from urllib.parse import urlparse
+from urllib.parse import urlunparse
 
 import pytest
 import requests
 import yaml
+from bs4 import BeautifulSoup
 from PIL import Image
 from pytest import TempPathFactory
 from selenium.webdriver.common.by import By
@@ -133,26 +135,65 @@ def generate_image(
     return img
 
 
-def generate_markdown_post() -> str:
+def markdown_post_data() -> Dict[str, str]:
+    """Define the data for the markdown post."""
+    return {
+        "layout": "article",
+        "title": "Test Post",
+        "custom_css": "article.css",
+        "include_mathjax": "false",
+        "image_ref": "[No Image]",
+        "content": (
+            "## This is a test post\n"
+            "This is a sample post for testing purposes."
+        ),
+    }
+
+
+def generate_markdown_post(
+    data_func: Callable[[], Dict[str, str]] = markdown_post_data
+) -> str:
     """Generates basic Markdown post without an image reference."""
+    # get markdown data
+    data = data_func()
+
     # store content without indentation
-    content = textwrap.dedent(
-        """\
-        ---
-        layout: article
-        title: Test Post
-        custom_css: article.css
-        include_mathjax: true
-        ---
+    content = [
+        "---",
+        f"layout: {data['layout']}",
+        f"title: {data['title']}",
+        f"custom_css: {data['custom_css']}",
+        f"include_mathjax: {data['include_mathjax']}",
+        "---",
+        "",
+        f"{data['image_ref']}",
+        "",
+        f"{data['content']}",
+    ]
 
-        [No Image]
+    return "\n".join(content)
 
-        ## This is a test post
-        This is a sample post for testing purposes.
-    """
+
+def swap_protocol_and_domain(original_url: str, new_full_domain: str) -> str:
+    """Swap the protocol (scheme) and domain (netloc) of the given URL."""
+    # Parse the original URL and the new domain URL
+    parsed_original_url = urlparse(original_url)
+    parsed_new_domain = urlparse(new_full_domain)
+
+    # Replace the protocol (scheme) and domain (netloc)
+    new_url = parsed_original_url._replace(
+        scheme=parsed_new_domain.scheme, netloc=parsed_new_domain.netloc
     )
 
-    return content
+    # Reassemble and return the new URL
+    return urlunparse(new_url)
+
+
+def remove_html_extension(url: str) -> str:
+    """Removes the .html extension from the URL if it exists."""
+    if url.endswith(".html"):
+        return url[:-5]
+    return url
 
 
 @pytest.fixture(scope="session")
@@ -359,9 +400,6 @@ def post_url(
     built_post_path: Path, static_site_server: SimpleHTTPServer
 ) -> str:
     """Returns the full URL of the built post."""
-    # server url
-    url = static_site_server.url()
-
     # search for the '_site' directory in the path and extract the part below it
     try:
         site_index = built_post_path.parts.index("_site")
@@ -379,7 +417,8 @@ def post_url(
 
     # reconstruct the URL with blog, year, month, day, and title
     blog_dir, year, month, day, *title_parts = relative_parts
-    post_url = f"{url}/{blog_dir}/{year}/{month}/{day}/{'-'.join(title_parts)}"
+    post_path = f"/{blog_dir}/{year}/{month}/{day}/{'-'.join(title_parts)}"
+    post_url = urljoin(static_site_server.url(), post_path)
 
     return post_url
 
@@ -864,3 +903,45 @@ def test_social_links_displayed(
                 f"Expected icon class '{expected_icon_class!r}', but found "
                 f"'{actual_icon_class!r}'."
             )
+
+
+@pytest.mark.website
+def test_meta_tags(post_url: str, jekyll_user_config: Dict[str, str]) -> None:
+    """Test the correct Open Graph and Twitter Card meta tags set."""
+    # fetch the page content using requests
+    response = requests.get(post_url)
+    assert response.status_code == 200
+
+    # get markdown post data
+    expected_data = markdown_post_data()
+
+    # get post and efault iamge updated urls
+    post_updated_url = remove_html_extension(
+        swap_protocol_and_domain(post_url, jekyll_user_config["url"])
+    )
+    default_image_url = urljoin(
+        jekyll_user_config["url"], jekyll_user_config["default_image"]
+    )
+
+    # parse the HTML content
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # open graph meta tags
+    og_title = soup.find("meta", property="og:title")
+    og_desc = soup.find("meta", property="og:description")
+    og_url = soup.find("meta", property="og:url")
+    og_image = soup.find("meta", property="og:image")
+
+    assert og_title and og_title["content"].strip() == expected_data["title"]
+    assert og_desc and og_desc["content"].strip() in expected_data["content"]
+    assert og_url and og_url["content"] == post_updated_url
+    assert og_image and og_image["content"] == default_image_url
+
+    # twitter card meta tags
+    twt_title = soup.find("meta", attrs={"name": "twitter:title"})
+    twt_desc = soup.find("meta", attrs={"name": "twitter:description"})
+    twt_image = soup.find("meta", attrs={"name": "twitter:image"})
+
+    assert twt_title and twt_title["content"].strip() == expected_data["title"]
+    assert twt_desc and twt_desc["content"].strip() in expected_data["content"]
+    assert twt_image and twt_image["content"] == default_image_url
