@@ -1,17 +1,14 @@
 markdown: kramdown
 permalink: /blog/:year/:month/:day/:title
 pages_dir: /pages
-high_res_image: "/assets/images/diogenes_art.q75.webp"
-low_res_image: "/assets/images/diogenes_art.q0.webp"
-default_image: "/assets/images/diogenes_art.q75.webp"
-url: "https://yourwebsite.com"
+high_res_image: "/assets/images/Alexander_cuts_the_Gordian_Knot.221k.75.webp"
+low_res_image: "/assets/images/Alexander_cuts_the_Gordian_Knot.28k.0.webp"
+default_image: "/assets/images/Alexander_cuts_the_Gordian_Knot.221k.75.webp"
+url: "https://diogenesanalytics.com"
 contacts:
-  business: "/business-contact/"
-  personal: "/personal-contact/"
+  business: "/contact/"
 social:
-  x-twitter: "https://twitter.com/yourprofile"
-  instagram: "https://instagram.com/yourprofile"
-  youtube: "https://youtube.com/yourprofile"
+  youtube: "https://www.youtube.com/@DiogenesAnalytics"
 exclude:
   - CNAME
   - Dockerfile
