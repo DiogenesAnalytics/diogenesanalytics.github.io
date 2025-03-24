@@ -237,7 +237,7 @@ define process-renamed-images
 	          rm -f $$img; \
 	          echo "🗑️ Removed lingering image: $$img"; \
 	        else \
-	          echo "⚠️ Lingering image detected: $$img"; \
+	          echo "❌ Lingering image detected: $$img"; \
 	        fi; \
 	      fi; \
 	    done; \

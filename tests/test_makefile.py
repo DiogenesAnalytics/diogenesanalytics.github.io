@@ -1002,7 +1002,7 @@ def test_check_renamed_images_no_lingering(
     ), f"{synced_image.name!r} found in the output: {result.stdout}"
 
     assert (
-        "⚠️ Lingering image detected" not in result.stdout
+        "❌ Lingering image detected" not in result.stdout
     ), f"Lingering image detected' in the output: {result.stdout}"
 
     assert (
@@ -1035,7 +1035,7 @@ def test_clear_renamed_images_no_lingering(
     ), f"{synced_image.name!r} found in the output: {result.stdout}"
 
     assert (
-        "⚠️ Lingering image detected" not in result.stdout
+        "❌ Lingering image detected" not in result.stdout
     ), f"Lingering image detected' in the output: {result.stdout}"
 
     assert (
@@ -1074,7 +1074,7 @@ def test_check_renamed_images_has_lingering(
     assert "No converted assets directory found" in result.stdout
 
     assert (
-        "⚠️ Lingering image detected" in result.stdout
+        "❌ Lingering image detected" in result.stdout
     ), f"Lingering image detected' no found in output: {result.stdout}"
 
     assert (
@@ -1113,7 +1113,7 @@ def test_clear_renamed_images_has_lingering(
     assert "No converted assets directory found" in result.stdout
 
     assert (
-        "⚠️ Lingering image detected" not in result.stdout
+        "❌ Lingering image detected" not in result.stdout
     ), f"Lingering image detected' no found in output: {result.stdout}"
 
     assert (
