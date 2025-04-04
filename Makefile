@@ -245,6 +245,24 @@ define process-renamed-images
 	done
 endef
 
+# testing-related variables
+USE_NBQA ?= true
+NBQA_NOTEBOOKS ?= $(NOTEBOOKS)
+PYTHON_TARGETS := tests/
+PYTHON_FILES := $(shell find $(PYTHON_TARGETS) -type f -name '*.py')
+
+# linter command function that dynamically decides to use nbqa or not
+define BUILD_LINTER_COMMAND
+	@if [ ! -z "$(PYTHON_FILES)" ] && [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
+		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
+		${DCKRTST} ${DCKRIMG_TESTS} nbqa $(1) $(NBQA_NOTEBOOKS); \
+	elif [ ! -z "$(PYTHON_FILES)" ]; then \
+		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
+	elif [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
+		${DCKRTST} ${DCKRIMG_TESTS} nbqa $(1) $(NBQA_NOTEBOOKS); \
+	fi
+endef
+
 ################################################################################
 # COMMANDS                                                                     #
 ################################################################################
@@ -654,22 +672,22 @@ tests: pytest lint
 pytest:
 	@ ${DCKRTST} ${DCKRIMG_TESTS} pytest
 
-# run isort in docker container
+# isort - Handle both Python and Notebooks
 isort:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} isort tests/
+	@ $(call BUILD_LINTER_COMMAND,isort)
 
-# run black in docker container
+# black - Handle both Python and Notebooks
 black:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} black --line-length 80 tests/
+	@ $(call BUILD_LINTER_COMMAND,black --line-length 80)
 
-# run flake8 in docker container
+# flake8 - Handle both Python and Notebooks
 flake8:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} flake8 --config=tests/.flake8
+	@ $(call BUILD_LINTER_COMMAND,flake8 --config=tests/.flake8)
 
-# run mypy in docker container
+# mypy - Handle both Python and Notebooks
 mypy:
-	@ ${DCKRTST} ${DCKRIMG_TESTS} mypy --strict --warn-unreachable --pretty \
-	--show-column-numbers --show-error-context --ignore-missing-imports tests/
+	@ $(call BUILD_LINTER_COMMAND,mypy --strict --warn-unreachable --pretty \
+	--show-column-numbers --show-error-context --ignore-missing-imports)
 
 # install act command
 install-act:
