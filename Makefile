@@ -222,12 +222,19 @@ define process-renamed-images
 	fi; \
 	mode=$(1); \
 	echo "$$mode renamed or lingering images..."; \
-	for post in $(wildcard $(PSTDR)/*.md); do \
+	for post in $(wildcard $(OUTDR)/*.md); do \
 	  post_name=$$(basename $$post .md); \
 	  image_dir="assets/images/$${post_name}$(FGEXT)"; \
 	  out_image_dir="$(OUTDR)/assets/images/$${post_name}$(FGEXT)"; \
-	  if [ ! -d "$$out_image_dir" ]; then \
-	    echo "⚠️ Skipping $${post_name}: No converted assets directory found."; \
+		if [ ! -d "$$out_image_dir" ]; then \
+	    if [ -d "$$image_dir" ]; then \
+	      if [ "$$mode" = "Clearing" ]; then \
+	        echo "🗑️ Removed obsolete image directory: $$image_dir (no longer used)"; \
+	        rm -rf "$$image_dir"; \
+	      else \
+	        echo "❌ Lingering image directory detected: $$image_dir"; \
+	      fi; \
+	    fi; \
 	    continue; \
 	  fi; \
 	  if [ -d $$image_dir ]; then \
