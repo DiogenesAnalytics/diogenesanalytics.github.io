@@ -74,4 +74,4 @@ Where:
 This definition makes clear: **advantage is not about winning outright**, but about *increasing the expected value* of outcomes from your current position, relative to some reference.
 
 ## Moral
-Regardless of what is the *utility function* used to calculate the various *options* available (or in a game what we might call *positions*) **advantage** (or **disadvantage**) is merely the *difference* between the two *options* / *positions*. The whole of *decision making* and *game theory* can ultimately be reduced down to determining which *option(s* / *position(s)* relative to my current *option* / *position* *maximize* the *positive utility difference*.
+Regardless of what is the *utility function* used to calculate the various *options* available (or in a game what we might call *positions*) **advantage** (or **disadvantage**) is merely the *difference* between the *options* / *positions*. The whole of *decision making* and *game theory* can ultimately be reduced down to determining which *option(s)* / *position(s)* relative to my current *option* / *position* *maximize* the *positive utility difference*.
