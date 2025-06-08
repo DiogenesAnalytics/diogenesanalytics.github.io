@@ -1,6 +1,6 @@
 ---
 layout: article
-title: The Illusion of Simplicity - How Limited Choices Distort Utility
+title: The Illusion of Simplicity - How Limited Options Distort Utility
 custom_css: article.css
 include_mathjax: true
 ---
@@ -18,7 +18,7 @@ Where each variable represents a meaningful factor:
 * **C**: cost
 * **D**: difficulty or risk
 
-Here is your set of choices:
+Here is your set of options:
 
 | Option | A (Benefit) | B (Bonus) | C (Cost) | D (Difficulty) | Utility $U = \frac{AB}{CD}$        |
 | ------ | ----------- | --------- | -------- | -------------- | ---------------------------------- |
