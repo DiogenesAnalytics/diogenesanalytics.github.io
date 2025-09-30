@@ -170,21 +170,51 @@ DCKRTST = docker run --rm ${DCKRUSR} ${TESTVOL} ${DCKRTTY}
 DCKRTAG ?= $(GIT_BRANCH)
 DCKR_PULL ?= true
 DCKR_NOCACHE ?= false
+DCKRIMG_FROM ?=
 DCKRIMG_BASE ?= ghcr.io/$(GITHUB_USER)/$(REPO_NAME):$(DCKRTAG)
 DCKRIMG_JPYTR ?= ${DCKRIMG_BASE}_jupyter
 DCKRIMG_TESTS ?= ${DCKRIMG_BASE}_testing
 
-# Define the docker build command with optional --no-cache
+# Define the docker build command with optional --no-cache and a notification
 define DOCKER_BUILD
+	echo "🛠️ Building Docker image $1 (target: $2) $(if $(filter true,$(DCKR_NOCACHE)),with --no-cache,)" ; \
 	docker build --build-arg DCKRSRC=${DCKRSRC} -t $1 . --load --target $2 \
 	  $(if $(filter true,$(DCKR_NOCACHE)),--no-cache)
 endef
 
-# Function to conditionally pull or build the docker image
+# Function to conditionally pull or build the docker image with notifications
 define DOCKER_PULL_OR_BUILD
-	$(if $(filter true,$(DCKR_PULL)), \
-	  docker pull $1 || (echo "Pull failed. Building Docker image for $1..." && \
-	  $(call DOCKER_BUILD,$1,$2)), $(call DOCKER_BUILD,$1,$2))
+	echo "➡️ Evaluating Docker image $1..." ; \
+	if [ "$(DCKR_PULL)" = "true" ]; then \
+	  echo "⬇️ Attempting to pull $1..." ; \
+	  if docker pull $1 ; then \
+	    echo "✅ Pulled $1 successfully." ; \
+	  else \
+	    echo "⚠️ Pull failed. Building Docker image $1..." ; \
+	    docker build --build-arg DCKRSRC=${DCKRSRC} -t $1 . --load --target $2 $(if $(filter true,$(DCKR_NOCACHE)),--no-cache) ; \
+	  fi ; \
+	else \
+	  echo "⚙️ DCKR_PULL=false, building Docker image $1..." ; \
+	  docker build --build-arg DCKRSRC=${DCKRSRC} -t $1 . --load --target $2 $(if $(filter true,$(DCKR_NOCACHE)),--no-cache) ; \
+	fi
+endef
+
+# wrapper for build targets to respect DCKRIMG_FROM
+define DOCKER_PULL_OR_FAIL_FROM
+	if [ -n "$(DCKRIMG_FROM)" ]; then \
+	  echo "🔒 Using explicit source image: $(DCKRIMG_FROM)"; \
+	  if docker pull $(DCKRIMG_FROM); then \
+	    echo "✅ Pulled $(DCKRIMG_FROM) successfully."; \
+	    echo "🏷️  Tagging $(DCKRIMG_FROM) as $1..."; \
+	    docker tag $(DCKRIMG_FROM) $1; \
+	  else \
+	    echo "❌ Cannot pull $(DCKRIMG_FROM). Aborting."; \
+	    exit 1; \
+	  fi; \
+	else \
+	  echo "⚙️ No explicit source image, using normal pull/build logic..."; \
+	  $(call DOCKER_PULL_OR_BUILD,$1,$2); \
+	fi
 endef
 
 # check for conditional vars to turn off docker
@@ -380,12 +410,12 @@ check-all: check-docker-images check-deps-jupyter check-deps-tests
 # build jupyter docker image with conditional pull and build
 build-jupyter:
 	@ echo "Building Jupyter Docker image..."
-	@ $(call DOCKER_PULL_OR_BUILD,${DCKRIMG_JPYTR},jupyter)
+	@ $(call DOCKER_PULL_OR_FAIL_FROM,${DCKRIMG_JPYTR},jupyter)
 
 # build testing docker image with conditional pull and build
 build-tests:
 	@ echo "Building Test Docker image..."
-	@ $(call DOCKER_PULL_OR_BUILD,${DCKRIMG_TESTS},testing)
+	@ $(call DOCKER_PULL_OR_FAIL_FROM,${DCKRIMG_TESTS},testing)
 
 # launch jupyter notebook development docker image
 jupyter:
