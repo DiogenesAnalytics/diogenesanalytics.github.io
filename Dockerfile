@@ -37,7 +37,7 @@ RUN apt-get update \
 RUN git config --global --add safe.directory '*'
 
 # Install Jekyll (no need for Bundler or a Gemfile)
-RUN gem install jekyll -v 4.2.0
+RUN gem install jekyll -v 4.3.3
 
 # download and install Google Chrome (modern keyrings-based method)
 RUN mkdir -p /etc/apt/keyrings \

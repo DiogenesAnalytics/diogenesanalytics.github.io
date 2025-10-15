@@ -157,7 +157,6 @@ GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 # docker-related variables
 JKLCTNR = jekyll.${DCTNR}
 JPTCTNR = jupyter.${DCTNR}
-JKYLIMG = jekyll/jekyll:4.2.0
 DCKRSRC = /usr/local/src/$(REPO_NAME)
 DCKRTTY := $(if $(filter true,$(NOTTY)),-i,-it)
 USE_VOL ?= true
@@ -517,8 +516,8 @@ jekyll:
 	             --name ${JKLCTNR} \
 	             -v ${CURRENTDIR}:/srv/jekyll:Z \
 	             -p 4000 \
-	             ${JKYLIMG} \
-	               jekyll serve && \
+	             ${DCKRIMG_TESTS} \
+	               jekyll serve --host 0.0.0.0 && \
 	  if ! grep -sq "${JKLCTNR}" "${CURRENTDIR}/.running_containers"; then \
 	    echo "${JKLCTNR}" >> .running_containers; \
 	  fi \
@@ -533,7 +532,7 @@ build-site:
 	           --rm \
 	           -v ${CURRENTDIR}:/srv/jekyll:Z \
 	           -p 4000 \
-	           ${JKYLIMG} \
+	           ${DCKRIMG_TESTS} \
 	             jekyll build && \
 	echo "Site successfully built!"
 
