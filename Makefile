@@ -290,14 +290,21 @@ PYTHON_FILES := $(shell find $(PYTHON_TARGETS) -type f -name '*.py')
 # linter command function that dynamically decides to use nbqa or not
 define BUILD_LINTER_COMMAND
 	@if [ ! -z "$(PYTHON_FILES)" ] && [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
+		echo "🧹 Running $(1) on Python files..."; \
 		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
+		echo "📘 Running nbqa $(1) on Jupyter notebooks..."; \
 		${DCKRTST} ${DCKRIMG_TESTS} nbqa "$(1)" $(NBQA_NOTEBOOKS); \
 	elif [ ! -z "$(PYTHON_FILES)" ]; then \
+		echo "🧹 Running $(1) on Python files only (no notebooks)."; \
 		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
 	elif [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
+		echo "📘 Running nbqa $(1) on notebooks only (no Python files found)."; \
 		${DCKRTST} ${DCKRIMG_TESTS} nbqa "$(1)" $(NBQA_NOTEBOOKS); \
+	else \
+		echo "⚠️  No Python files or notebooks found. Skipping $(1)."; \
 	fi
 endef
+
 
 ################################################################################
 # COMMANDS                                                                     #
@@ -704,9 +711,18 @@ lint: isort black flake8 mypy
 # run full testing suite
 tests: pytest lint
 
-# run pytest in docker container
+# run pytest in docker container (with clear printed info)
 pytest:
+	@echo ""
+	@echo "🧪  Running tests with pytest..."
+	@echo "───────────────────────────────────────────────"
+	@echo "🧩  Container image: ${DCKRIMG_TESTS}"
+	@echo "📁  Working directory: ${PWD}"
+	@echo "───────────────────────────────────────────────"
 	@ ${DCKRTST} ${DCKRIMG_TESTS} pytest
+	@echo ""
+	@echo "✅  Pytest run complete!"
+	@echo ""
 
 # isort - Handle both Python and Notebooks
 isort:
