@@ -291,11 +291,11 @@ PYTHON_FILES := $(shell find $(PYTHON_TARGETS) -type f -name '*.py')
 define BUILD_LINTER_COMMAND
 	@if [ ! -z "$(PYTHON_FILES)" ] && [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
 		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
-		${DCKRTST} ${DCKRIMG_TESTS} nbqa $(1) $(NBQA_NOTEBOOKS); \
+		${DCKRTST} ${DCKRIMG_TESTS} nbqa "$(1)" $(NBQA_NOTEBOOKS); \
 	elif [ ! -z "$(PYTHON_FILES)" ]; then \
 		${DCKRTST} ${DCKRIMG_TESTS} $(1) $(PYTHON_FILES); \
 	elif [ "$(USE_NBQA)" = "true" ] && [ ! -z "$(NBQA_NOTEBOOKS)" ]; then \
-		${DCKRTST} ${DCKRIMG_TESTS} nbqa $(1) $(NBQA_NOTEBOOKS); \
+		${DCKRTST} ${DCKRIMG_TESTS} nbqa "$(1)" $(NBQA_NOTEBOOKS); \
 	fi
 endef
 
