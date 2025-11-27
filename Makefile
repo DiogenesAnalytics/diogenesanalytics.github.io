@@ -521,6 +521,7 @@ jekyll:
 	  docker run -d \
 	             --rm \
 	             --name ${JKLCTNR} \
+	             ${DCKRUSR} \
 	             -v ${CURRENTDIR}:${DCKRSRC}:Z \
 	             -p 4000 \
 	             ${DCKRIMG_TESTS} \

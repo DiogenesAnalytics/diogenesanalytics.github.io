@@ -59,3 +59,11 @@ RUN pip3 install -r tests/requirements.txt
 
 # get chromedriver (sbase installed by requirements.txt)
 RUN sbase install chromedriver
+
+# create unique user
+RUN useradd -u 1000 -m -d /home/tester tester
+RUN mkdir -p /home/tester/.cache
+RUN chown -R tester:tester /home/tester
+
+# Mark the directory safe for git
+RUN git config --global --add safe.directory ${DCKRSRC}
