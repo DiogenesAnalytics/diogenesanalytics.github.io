@@ -1,11 +1,11 @@
 """Filters for filtering on Jupyter notebook YAML front matter."""
 
 from pathlib import Path
+from typing import Any
+from typing import Dict
 
 import nbformat
 import yaml
-from typinig import Any
-from typinig import Dict
 
 
 def parse_front_matter(nb_path: Path) -> Dict[str, Any]:

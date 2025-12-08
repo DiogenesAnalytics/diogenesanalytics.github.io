@@ -25,3 +25,6 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "website: custom marker for website tests."
     )
+    config.addinivalue_line(
+        "markers", "filter: custom marker for filter-notebook tests."
+    )

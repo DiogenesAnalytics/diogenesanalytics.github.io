@@ -8,8 +8,22 @@ RUN mamba install --yes \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
+# build argument for the CLI tool project path
+ARG HOST_PROJECT_PATH=_jupyter/scripts/filter_notebook
+ARG CONT_PROJECT_PATH=/usr/local/src/filter_notebook
+
+# copy just the package source to /opt
+COPY ${HOST_PROJECT_PATH} ${CONT_PROJECT_PATH}
+
+# install it as a package
+USER root
+RUN pip install --no-cache-dir ${CONT_PROJECT_PATH}
+
 # install pip only libraries
-RUN pip install git+https://github.com/DiogenesAnalytics/blog_utils
+RUN pip install --no-cache-dir git+https://github.com/DiogenesAnalytics/blog_utils
+
+# switch back to default Jupyter user
+USER ${NB_USER}
 
 # test base image
 FROM python:3.11 AS testing
@@ -54,8 +68,11 @@ WORKDIR ${DCKRSRC}
 # copy source
 COPY . .
 
+# install local filter-notebook package without changing WORKDIR
+RUN pip install --no-cache-dir -e ./_jupyter/scripts/filter_notebook
+
 # install requirements (installs sbase)
-RUN pip3 install -r tests/requirements.txt
+RUN pip3 install --no-cache-dir -r tests/requirements.txt
 
 # get chromedriver (sbase installed by requirements.txt)
 RUN sbase install chromedriver
