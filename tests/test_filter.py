@@ -5,6 +5,8 @@ from pathlib import Path
 
 import nbformat
 import pytest
+from click.testing import CliRunner
+from filter_notebook.cli import main as cli_main
 from filter_notebook.filter import parse_front_matter
 from filter_notebook.filter import should_publish
 
@@ -124,3 +126,40 @@ def test_should_publish_false(nb_publish_false: Path) -> None:
 def test_should_publish_empty(nb_empty: Path) -> None:
     """Test for empty notebooks."""
     assert should_publish(nb_empty) is True
+
+
+@pytest.mark.cli
+def test_cli_publish_true(nb_publish_true: Path) -> None:
+    """CLI exits 0 for publish: true notebook."""
+    runner = CliRunner()
+    result = runner.invoke(cli_main, [str(nb_publish_true), "--publish"])
+    assert result.exit_code == 0
+    assert "passes filters" in result.output
+
+
+@pytest.mark.cli
+def test_cli_publish_false(nb_publish_false: Path) -> None:
+    """CLI exits 1 for publish: false notebook when --publish is set."""
+    runner = CliRunner()
+    result = runner.invoke(cli_main, [str(nb_publish_false), "--publish"])
+    assert result.exit_code == 1
+    assert "Skipping unpublished" in result.output
+
+
+@pytest.mark.cli
+def test_cli_no_publish_field(nb_no_publish_field: Path) -> None:
+    """CLI exits 0 for notebook with missing publish attribute."""
+    runner = CliRunner()
+    result = runner.invoke(cli_main, [str(nb_no_publish_field), "--publish"])
+    assert result.exit_code == 0
+    assert "passes filters" in result.output
+
+
+@pytest.mark.cli
+def test_cli_nonexistent_file(tmp_path: Path) -> None:
+    """CLI exits 1 for nonexistent notebook."""
+    fake_path = tmp_path / "does_not_exist.ipynb"
+    runner = CliRunner()
+    result = runner.invoke(cli_main, [str(fake_path), "--publish"])
+    assert result.exit_code == 1
+    assert "Notebook not found" in result.output
