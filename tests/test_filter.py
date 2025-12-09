@@ -2,6 +2,7 @@
 
 import textwrap
 from pathlib import Path
+from typing import Tuple
 
 import nbformat
 import pytest
@@ -78,6 +79,16 @@ def nb_empty(tmp_path: Path) -> Path:
     nb = nbformat.v4.new_notebook()  # type: ignore
     nbformat.write(nb, file)  # type: ignore
     return file
+
+
+@pytest.fixture
+def nb_in_input_dir(nb_publish_true: Path, tmp_path: Path) -> Tuple[Path, Path]:
+    """Provides a notebook copied into a temporary input directory."""
+    input_dir = tmp_path / "input_dir"
+    input_dir.mkdir()
+    dest = input_dir / nb_publish_true.name
+    dest.write_bytes(nb_publish_true.read_bytes())
+    return dest, input_dir
 
 
 @pytest.mark.filter
@@ -163,3 +174,30 @@ def test_cli_nonexistent_file(tmp_path: Path) -> None:
     result = runner.invoke(cli_main, [str(fake_path), "--publish"])
     assert result.exit_code == 1
     assert "Notebook not found" in result.output
+
+
+@pytest.mark.cli
+def test_cli_with_input_dir(nb_in_input_dir: Tuple[Path, Path]) -> None:
+    """CLI uses --input-dir for relative notebook names."""
+    nb_path, input_dir = nb_in_input_dir
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_main, [nb_path.name, "--input-dir", str(input_dir), "--publish"]
+    )
+    assert result.exit_code == 0
+    assert "passes filters" in result.output
+
+
+@pytest.mark.cli
+def test_cli_absolute_path_ignores_input_dir(
+    nb_in_input_dir: Tuple[Path, Path]
+) -> None:
+    """CLI warns if notebook path is absolute and --input-dir is provided."""
+    nb_path, input_dir = nb_in_input_dir
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_main, [str(nb_path), "--input-dir", str(input_dir), "--publish"]
+    )
+    assert result.exit_code == 0
+    assert "ignoring --input-dir" in result.output
+    assert "passes filters" in result.output
