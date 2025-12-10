@@ -10,6 +10,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import nbformat
 import pytest
 from pytest import MonkeyPatch
 
@@ -409,6 +410,52 @@ def mock_has_lingering_image_dir(
     lingering_image.write_text("This is a fake lingering image.")
 
     return currentdir, lingering_image_dir
+
+
+@pytest.fixture(scope="function")
+def mock_publish_notebooks(
+    mock_blog_repo: Tuple[Path, Path, Path, Path]
+) -> Tuple[Path, Path, Path, Path]:
+    """Populate mock repo with 3 notebooks for publish filter."""
+    # unpack repo fixture
+    currentdir, outdir, posts_dir, assets_dir = mock_blog_repo
+
+    # setup notebooks dir path
+    notebooks_dir = currentdir / "_jupyter" / "notebooks"
+
+    # notebook definitions: (filename, title, publish value)
+    nb_definitions = [
+        ("nb_publish_true.ipynb", "Notebook Publish True", "true"),
+        ("nb_publish_false.ipynb", "Notebook Publish False", "false"),
+        ("nb_no_publish.ipynb", "Notebook No Publish", None),
+    ]
+
+    # loop to create notebooks with YAML front matter
+    for filename, title, publish_value in nb_definitions:
+        # create new nb path
+        nb_path = notebooks_dir / filename
+
+        # create new nb (empty)
+        nb = nbformat.v4.new_notebook()  # type: ignore
+
+        # build YAML front matter
+        yaml_lines = ["---", f"title: {title}"]
+        if publish_value is not None:
+            yaml_lines.append(f"publish: {publish_value}")
+        yaml_lines.append("---")
+        nb_yaml = "\n".join(yaml_lines)
+
+        # add first raw cell with YAML
+        nb.cells.append(nbformat.v4.new_raw_cell(nb_yaml))  # type: ignore
+
+        # add code cell
+        nb.cells.append(nbformat.v4.new_code_cell(f"print({title!r})"))  # type: ignore
+
+        # write notebook cells
+        with nb_path.open("w", encoding="utf-8") as f:
+            nbformat.write(nb, f)  # type: ignore
+
+    return currentdir, outdir, posts_dir, assets_dir
 
 
 @pytest.mark.git
@@ -1244,3 +1291,30 @@ def test_check_workdir_matches_dckrsrc(
 
     # make sure they match
     assert expected_workdir == actual_workdir
+
+
+@pytest.mark.debug
+@pytest.mark.make
+@pytest.mark.filter
+def test_make_process_notebooks(
+    mock_publish_notebooks: Tuple[Path, Path, Path, Path]
+) -> None:
+    """Validate Makefile notebook filtering end-to-end."""
+    # get currentdir
+    currentdir, outdir, *_ = mock_publish_notebooks
+
+    # run conversion filter
+    result = run_make(
+        "all", cwd=currentdir, extra_args=["NODOCKER=true", "NOTMPLT=true"]
+    )
+
+    # make sure it succeeded
+    assert result.returncode == 0, result.stdout
+
+    # gather converted posts
+    posts = [p.name for p in outdir.glob("*.md")]
+
+    # check
+    assert len(posts) == 2
+    assert "nb_publish_true.md" in posts
+    assert "nb_no_publish.md" in posts

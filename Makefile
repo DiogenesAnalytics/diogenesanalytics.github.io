@@ -233,6 +233,30 @@ NBEXEC = jupyter nbconvert --to notebook --execute --inplace
 NBCNVR = jupyter nbconvert ${CNVRSNFLGS}
 NBCLER = jupyter nbconvert --clear-output --inplace
 
+# Define a reusable function to process a notebook if it passes filter
+define PROCESS_NOTEBOOK
+	nb_path=$(1); \
+	if ${DCKRRUN} ${DCKRIMG_JPYTR} filter-notebook $$nb_path --publish >/dev/null; then \
+		echo "────────────────────────────────────────"; \
+		echo "📓 Processing notebook: $$nb_path"; \
+		echo "🔍 Filter result: publish=TRUE (or missing key)"; \
+		echo "⏳ Executing..."; \
+		start_time=$$(date +%s); \
+		${DCKRRUN} ${DCKRIMG_JPYTR} ${NBEXEC} $$nb_path; \
+		exec_done=$$(date +%s); \
+		echo "⏳ Converting to Markdown..."; \
+		${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} $$nb_path; \
+		end_time=$$(date +%s); \
+		echo "✅ Done: $$nb_path"; \
+		echo "   Execution time: $$((exec_done-start_time))s"; \
+		echo "   Conversion time: $$((end_time-exec_done))s"; \
+		echo "────────────────────────────────────────"; \
+	else \
+		echo "💤 Skipping unpublished notebook: $$nb_path (publish=false)"; \
+	fi
+endef
+
+
 # get a list of untracked posts that do not have corresponding notebooks
 find_untracked_posts = $(shell \
   git ls-files --others --exclude-standard _posts/*.md | \
@@ -312,8 +336,7 @@ endef
 
 # define a rule to convert Jupyter notebooks to desired output format
 $(PSTDR)/%.$(OEXT): $(INTDR)/%.ipynb
-	${DCKRRUN} ${DCKRIMG_JPYTR} ${NBEXEC} $<
-	${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} $<
+	@ $(call PROCESS_NOTEBOOK,$<)
 
 # define the default target
 all: $(OUTPUTFLS)
@@ -377,7 +400,9 @@ check-deps-jupyter: check-image-jupyter
 	  command -v jupyter > /dev/null && \
 	  echo '✅ Jupyter is installed!' || echo '❌ Jupyter is missing.' && \
 	  python3 -m pip show nbconvert > /dev/null && \
-	  echo '✅ nbconvert is installed!' || echo '❌ nbconvert is missing.'"
+	  echo '✅ nbconvert is installed!' || echo '❌ nbconvert is missing.' && \
+		command -v filter-notebook > /dev/null && \
+		echo '✅ filter-notebook is installed!' || echo '❌ filter-notebook is missing.'"
 
 # check if test docker image exists
 check-deps-tests: check-image-tests check-workdir-tests
@@ -407,6 +432,8 @@ check-deps-tests: check-image-tests check-workdir-tests
 	  echo '✅ black is installed!' || echo '❌ black is missing.' && \
 	  command -v sbase > /dev/null && \
 	  echo '✅ sbase is installed!' || echo '❌ sbase is missing.' && \
+		command -v filter-notebook > /dev/null && \
+		echo '✅ filter-notebook is installed!' || echo '❌ filter-notebook is missing.' && \
 	  echo '✅ All testing dependencies are present!'"
 
 # check all dependencies
