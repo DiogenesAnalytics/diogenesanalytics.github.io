@@ -190,3 +190,39 @@ command, simply run `make -n [COMMAND]`.
 + `check-act`: check if act is installed
 + `run-act-tests`: run GitHub action tests locally
 + `shell`: create interactive shell in Docker container
+
+## Notebook Conversion
+Some additional documentation is required to clarify how the `make`
+(*aka*: `make all`) command handles converting the *Jupyter notebooks* into
+*markdown* for publishing in the *Jekyll blog*.
+
+### Publish
+The user can set a `publish` attribute in the *Jekyll YAML front matter* that
+will determine whether the notebook should be converted or not. For example:
+
+```yml
+---
+title: "My Jekyll Post"
+publish: true
+---
+```
+
+If the `publish` key is set to `true` *OR* the key is simply missing,
+then the notebook will be automatically executed and converted into a
+*markdown* article during the build process. The following example is also
+converted (even though it lacks the `publish` keyword entirely):
+
+```yml
+---
+title: "My Jekyll Post"
+---
+```
+
+If the key is set to `false` then the notebook will be skipped:
+
+```yml
+---
+title: "My Jekyll Post"
+publish: false
+---
+```
