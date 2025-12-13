@@ -1293,7 +1293,6 @@ def test_check_workdir_matches_dckrsrc(
     assert expected_workdir == actual_workdir
 
 
-@pytest.mark.debug
 @pytest.mark.make
 @pytest.mark.filter
 def test_make_process_notebooks(
