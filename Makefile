@@ -236,23 +236,27 @@ NBCLER = jupyter nbconvert --clear-output --inplace
 # Define a reusable function to process a notebook if it passes filter
 define PROCESS_NOTEBOOK
 	nb_path=$(1); \
+	if ! ${DCKRRUN} ${DCKRIMG_JPYTR} command -v filter-notebook >/dev/null 2>&1; then \
+	  echo "❌ ERROR: filter-notebook is not installed in the environment"; \
+	  exit 1; \
+	fi; \
 	if ${DCKRRUN} ${DCKRIMG_JPYTR} filter-notebook $$nb_path --publish >/dev/null; then \
-		echo "────────────────────────────────────────"; \
-		echo "📓 Processing notebook: $$nb_path"; \
-		echo "🔍 Filter result: publish=TRUE (or missing key)"; \
-		echo "⏳ Executing..."; \
-		start_time=$$(date +%s); \
-		${DCKRRUN} ${DCKRIMG_JPYTR} ${NBEXEC} $$nb_path; \
-		exec_done=$$(date +%s); \
-		echo "⏳ Converting to Markdown..."; \
-		${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} $$nb_path; \
-		end_time=$$(date +%s); \
-		echo "✅ Done: $$nb_path"; \
-		echo "   Execution time: $$((exec_done-start_time))s"; \
-		echo "   Conversion time: $$((end_time-exec_done))s"; \
-		echo "────────────────────────────────────────"; \
+	  echo "────────────────────────────────────────"; \
+	  echo "📓 Processing notebook: $$nb_path"; \
+	  echo "🔍 Filter result: publish=TRUE (or missing key)"; \
+	  echo "⏳ Executing..."; \
+	  start_time=$$(date +%s); \
+	  ${DCKRRUN} ${DCKRIMG_JPYTR} ${NBEXEC} $$nb_path; \
+	  exec_done=$$(date +%s); \
+	  echo "⏳ Converting to Markdown..."; \
+	  ${DCKRRUN} ${DCKRIMG_JPYTR} ${NBCNVR} $$nb_path; \
+	  end_time=$$(date +%s); \
+	  echo "✅ Done: $$nb_path"; \
+	  echo "   Execution time: $$((exec_done-start_time))s"; \
+	  echo "   Conversion time: $$((end_time-exec_done))s"; \
+	  echo "────────────────────────────────────────"; \
 	else \
-		echo "💤 Skipping unpublished notebook: $$nb_path (publish=false)"; \
+	  echo "💤 Skipping unpublished notebook: $$nb_path (publish=false)"; \
 	fi
 endef
 
