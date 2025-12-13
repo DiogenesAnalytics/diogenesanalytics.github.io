@@ -236,7 +236,7 @@ NBCLER = jupyter nbconvert --clear-output --inplace
 # Define a reusable function to process a notebook if it passes filter
 define PROCESS_NOTEBOOK
 	nb_path=$(1); \
-	if ! ${DCKRRUN} ${DCKRIMG_JPYTR} command -v filter-notebook >/dev/null 2>&1; then \
+	if ! ${DCKRRUN} ${DCKRIMG_JPYTR} sh -c 'which filter-notebook >/dev/null 2>&1'; then \
 	  echo "❌ ERROR: filter-notebook is not installed in the environment"; \
 	  exit 1; \
 	fi; \
