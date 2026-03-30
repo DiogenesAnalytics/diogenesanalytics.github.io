@@ -3,6 +3,7 @@ FROM quay.io/jupyter/scipy-notebook:lab-4.1.5 AS jupyter
 
 # install python libraries available in conda
 RUN mamba install --yes \
+    'numpy<2' \
     'adjustText=1.3.0' \
     'geopandas=0.14.3' \
     'jupyterlab-spellchecker=0.8.4' \
@@ -24,7 +25,8 @@ USER root
 RUN pip install --no-cache-dir ${CONT_PROJECT_PATH}
 
 # install pip only libraries
-RUN pip install --no-cache-dir git+https://github.com/DiogenesAnalytics/blog_utils
+RUN pip install --no-cache-dir "numpy<2" --upgrade
+RUN pip install --no-cache-dir --no-deps git+https://github.com/DiogenesAnalytics/blog_utils
 
 # switch back to default Jupyter user
 USER ${NB_USER}
