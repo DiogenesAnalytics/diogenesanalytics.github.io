@@ -25,7 +25,7 @@ USER root
 RUN pip install --no-cache-dir ${CONT_PROJECT_PATH}
 
 # install pip only libraries
-RUN pip install --no-cache-dir "numpy<2" --upgrade
+RUN pip install --no-cache-dir "numpy<2" python-chess --upgrade
 RUN pip install --no-cache-dir --no-deps git+https://github.com/DiogenesAnalytics/blog_utils
 
 # switch back to default Jupyter user
