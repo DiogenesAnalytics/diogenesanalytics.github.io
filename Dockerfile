@@ -2,7 +2,7 @@
 FROM quay.io/jupyter/scipy-notebook:lab-4.1.5 AS jupyter
 
 # install python libraries available in conda
-RUN mamba install -vvv --yes \
+RUN mamba install --yes \
     'adjustText=1.3.0' \
     'geopandas=0.14.3' \
     'jupyterlab-spellchecker=0.8.4' \
