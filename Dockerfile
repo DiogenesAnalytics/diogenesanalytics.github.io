@@ -58,11 +58,10 @@ WORKDIR ${DCKRSRC}
 # copy source
 COPY . .
 
-# install local filter-notebook package without changing WORKDIR
-RUN pip install --no-cache-dir -e ./_jupyter/scripts/filter_notebook
-
-# install requirements (installs sbase)
-RUN pip3 install --no-cache-dir -r tests/requirements.txt
+# install poetry deps (THIS replaces requirements.txt)
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --with utils,dev --no-root
 
 # get chromedriver (sbase installed by requirements.txt)
 RUN sbase install chromedriver

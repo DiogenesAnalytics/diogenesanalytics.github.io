@@ -766,12 +766,11 @@ black:
 
 # flake8 - Handle both Python and Notebooks
 flake8:
-	@ $(call BUILD_LINTER_COMMAND,flake8 --config=tests/.flake8)
+	@ $(call BUILD_LINTER_COMMAND,flake8)
 
 # mypy - Handle both Python and Notebooks
 mypy:
-	@ $(call BUILD_LINTER_COMMAND,mypy --strict --warn-unreachable --pretty \
-	--show-column-numbers --show-error-context --ignore-missing-imports)
+	@ $(call BUILD_LINTER_COMMAND,mypy)
 
 # install act command
 install-act:

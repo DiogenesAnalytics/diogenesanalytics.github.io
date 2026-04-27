@@ -15,8 +15,8 @@ _site/
 # ipynb conversion
 converted/
 
-# data
-data/
+# notebook datasets
+**/data/
 
 # sync
 *.synced_history
