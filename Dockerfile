@@ -1,35 +1,19 @@
 # jupyter base image
-FROM quay.io/jupyter/scipy-notebook:lab-4.1.5 AS jupyter
+FROM ghcr.io/diogenesanalytics/scipy-notebook:master AS jupyter
 
-# install python libraries available in conda
-RUN mamba install --yes \
-    'adjustText=1.3.0' \
-    'geopandas=0.14.3' \
-    'jupyterlab-spellchecker=0.8.4' \
-    'shapely=2.0.4' \
-    'treelib=1.7.0' && \
-    mamba clean --all -f -y && \
-    fix-permissions "${CONDA_DIR}" && \
-    fix-permissions "/home/${NB_USER}"
+# change to dir for storing files
+WORKDIR /usr/local/src/blog_template
 
-# build argument for the CLI tool project path
-ARG HOST_PROJECT_PATH=_jupyter/scripts/filter_notebook
-ARG CONT_PROJECT_PATH=/usr/local/src/filter_notebook
+# get files
+COPY --chown=${NB_UID}:${NB_GID} pyproject.toml poetry.lock ./
 
-# copy just the package source to /opt
-COPY ${HOST_PROJECT_PATH} ${CONT_PROJECT_PATH}
+# now install poetry deps
+RUN poetry config virtualenvs.create false && \
+    poetry install --with utils --no-root
 
-# install it as a package
-USER root
-RUN pip install --no-cache-dir ${CONT_PROJECT_PATH}
-
-# install pip only libraries
-RUN pip install --no-cache-dir \
-    git+https://github.com/DiogenesAnalytics/blog_utils \
-    git+https://github.com/DiogenesAnalytics/games
-
-# switch back to default Jupyter user
+# switch back to default Jupyter user and workdir
 USER ${NB_USER}
+WORKDIR "${HOME}"
 
 # test base image
 FROM python:3.11 AS testing

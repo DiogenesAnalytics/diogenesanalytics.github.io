@@ -312,7 +312,7 @@ endef
 # testing-related variables
 USE_NBQA ?= true
 NBQA_NOTEBOOKS ?= $(NOTEBOOKS)
-PYTHON_TARGETS := tests/ _jupyter/scripts/
+PYTHON_TARGETS := tests/
 PYTHON_FILES := $(shell find $(PYTHON_TARGETS) -type f -name '*.py')
 
 # linter command function that dynamically decides to use nbqa or not
