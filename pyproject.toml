@@ -42,6 +42,10 @@ typeguard = ">=2.13.3"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
 
+[tool.black]
+line-length = 80
+target-version = ["py311"]
+
 [tool.coverage.paths]
 tests = ["tests"]
 

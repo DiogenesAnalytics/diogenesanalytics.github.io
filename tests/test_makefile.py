@@ -160,7 +160,7 @@ def mock_blog_repo(tmp_path: Path) -> Tuple[Path, Path, Path, Path]:
 
 @pytest.fixture(scope="function")
 def mock_converted_files(
-    mock_blog_repo: Tuple[Path, Path, Path]
+    mock_blog_repo: Tuple[Path, Path, Path],
 ) -> Tuple[Path, Path]:
     """Fixture to populate the mock blog repo with converted test files."""
     # extract paths from mock_blog_repo fixture
@@ -315,7 +315,7 @@ def mock_renamed_nb(
 
 @pytest.fixture(scope="function")
 def mock_missing_outdir(
-    mock_blog_repo: Tuple[Path, Path, Path, Path]
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
 ) -> Tuple[Path, Path, Path, Path]:
     """Simulates missing output directory."""
     # get dirs
@@ -414,7 +414,7 @@ def mock_has_lingering_image_dir(
 
 @pytest.fixture(scope="function")
 def mock_publish_notebooks(
-    mock_blog_repo: Tuple[Path, Path, Path, Path]
+    mock_blog_repo: Tuple[Path, Path, Path, Path],
 ) -> Tuple[Path, Path, Path, Path]:
     """Populate mock repo with 3 notebooks for publish filter."""
     # unpack repo fixture
@@ -498,7 +498,7 @@ def test_no_empty_config_values(print_config_output: Dict[str, str]) -> None:
 @pytest.mark.make
 @pytest.mark.fixture
 def test_github_info_matches_docker_images(
-    print_config_output: Dict[str, str]
+    print_config_output: Dict[str, str],
 ) -> None:
     """Test that GitHub user, repo name, and branch match the Docker images."""
     # extract values
@@ -1020,7 +1020,7 @@ def test_clear_renamed_with_lingering_posts_and_images(
 
 @pytest.mark.make
 def test_check_renamed_images_missing_outdir(
-    mock_missing_outdir: Tuple[Path, Path, Path, Path]
+    mock_missing_outdir: Tuple[Path, Path, Path, Path],
 ) -> None:
     """Test when the _jupyter/converted directory is missing."""
     # get the current directory and mock paths
@@ -1036,7 +1036,7 @@ def test_check_renamed_images_missing_outdir(
 
 @pytest.mark.make
 def test_clear_renamed_images_missing_outdir(
-    mock_missing_outdir: Tuple[Path, Path, Path, Path]
+    mock_missing_outdir: Tuple[Path, Path, Path, Path],
 ) -> None:
     """Test when the _jupyter/converted directory is missing."""
     # get the current directory and mock paths
@@ -1192,7 +1192,7 @@ def test_clear_renamed_images_has_lingering(
 
 @pytest.mark.make
 def test_check_lingering_image_dir(
-    mock_has_lingering_image_dir: Tuple[Path, Path]
+    mock_has_lingering_image_dir: Tuple[Path, Path],
 ) -> None:
     """Test that a lingering image directory is detected in checking mode."""
     currentdir, lingering_image_dir = mock_has_lingering_image_dir
@@ -1211,7 +1211,7 @@ def test_check_lingering_image_dir(
 
 @pytest.mark.make
 def test_clear_lingering_image_dir(
-    mock_has_lingering_image_dir: Tuple[Path, Path]
+    mock_has_lingering_image_dir: Tuple[Path, Path],
 ) -> None:
     """Test that a lingering image directory is deleted in clearing mode."""
     currentdir, lingering_image_dir = mock_has_lingering_image_dir
@@ -1278,7 +1278,7 @@ def test_unsync(
 
 @pytest.mark.make
 def test_check_workdir_matches_dckrsrc(
-    print_config_output: Dict[str, str]
+    print_config_output: Dict[str, str],
 ) -> None:
     """Test that the working directory inside the container matches DCKRSRC."""
     # set the expected working directory
@@ -1296,7 +1296,7 @@ def test_check_workdir_matches_dckrsrc(
 @pytest.mark.make
 @pytest.mark.filter
 def test_make_process_notebooks(
-    mock_publish_notebooks: Tuple[Path, Path, Path, Path]
+    mock_publish_notebooks: Tuple[Path, Path, Path, Path],
 ) -> None:
     """Validate Makefile notebook filtering end-to-end."""
     # get currentdir

@@ -151,7 +151,7 @@ def markdown_post_data() -> Dict[str, str]:
 
 
 def generate_markdown_post(
-    data_func: Callable[[], Dict[str, str]] = markdown_post_data
+    data_func: Callable[[], Dict[str, str]] = markdown_post_data,
 ) -> str:
     """Generates basic Markdown post without an image reference."""
     # get markdown data
@@ -490,7 +490,7 @@ def test_clone_directory(
 
 @pytest.mark.fixture
 def test_mock_post_with_image(
-    mock_post_with_image: Tuple[Path, Path, Path]
+    mock_post_with_image: Tuple[Path, Path, Path],
 ) -> None:
     """Ensures that the post and image are created in the correct directories."""
     # get post/image paths
