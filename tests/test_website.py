@@ -13,6 +13,7 @@ from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
+from typing import Optional
 from typing import Set
 from typing import Tuple
 from urllib.parse import urljoin
@@ -23,6 +24,7 @@ import pytest
 import requests
 import yaml
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from PIL import Image
 from pytest import TempPathFactory
 from selenium.webdriver.common.by import By
@@ -31,6 +33,24 @@ from seleniumbase import BaseCase
 from tests.jekyll_server import JekyllServer
 from tests.jekyll_server import SimpleHTTPServer
 from tests.jekyll_server import run_jekyll_build
+
+
+def meta_content(tag: Optional[Tag], key: str = "content") -> str:
+    """Extract a normalized string value from a BeautifulSoup meta tag."""
+    assert tag is not None, "Expected meta tag but got None"
+
+    value: Any = tag.get(key)
+
+    # BeautifulSoup may return list-like attribute values
+    if isinstance(value, list):
+        assert len(value) > 0, "Empty attribute list in meta tag"
+        value = value[0]
+
+    assert isinstance(
+        value, str
+    ), f"Expected str for meta content, got {type(value)}"
+
+    return value
 
 
 def get_project_directory() -> Path:
@@ -932,16 +952,16 @@ def test_meta_tags(post_url: str, jekyll_user_config: Dict[str, str]) -> None:
     og_url = soup.find("meta", property="og:url")
     og_image = soup.find("meta", property="og:image")
 
-    assert og_title and og_title["content"].strip() == expected_data["title"]
-    assert og_desc and og_desc["content"].strip() in expected_data["content"]
-    assert og_url and og_url["content"] == post_updated_url
-    assert og_image and og_image["content"] == default_image_url
+    assert meta_content(og_title).strip() == expected_data["title"]
+    assert meta_content(og_desc).strip() in expected_data["content"]
+    assert meta_content(og_url) == post_updated_url
+    assert meta_content(og_image) == default_image_url
 
     # twitter card meta tags
     twt_title = soup.find("meta", attrs={"name": "twitter:title"})
     twt_desc = soup.find("meta", attrs={"name": "twitter:description"})
     twt_image = soup.find("meta", attrs={"name": "twitter:image"})
 
-    assert twt_title and twt_title["content"].strip() == expected_data["title"]
-    assert twt_desc and twt_desc["content"].strip() in expected_data["content"]
-    assert twt_image and twt_image["content"] == default_image_url
+    assert meta_content(twt_title).strip() == expected_data["title"]
+    assert meta_content(twt_desc).strip() in expected_data["content"]
+    assert meta_content(twt_image) == default_image_url
