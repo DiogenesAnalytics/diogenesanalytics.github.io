@@ -40,6 +40,8 @@ pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
 seleniumbase = ">=4.24.0"
 typeguard = ">=2.13.3"
+types-requests = "*"
+types-PyYAML = "*"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
 
