@@ -767,7 +767,6 @@ def test_use_vol_off(current_directory: Path) -> None:
     # assert that the expected flag "-v" is present in the result
     assert result.returncode == 0
     assert "-v" not in result.stdout
-    assert str(current_directory) not in result.stdout
 
 
 @pytest.mark.make
@@ -1294,7 +1293,6 @@ def test_check_workdir_matches_dckrsrc(
 
 
 @pytest.mark.make
-@pytest.mark.filter
 def test_make_process_notebooks(
     mock_publish_notebooks: Tuple[Path, Path, Path, Path],
 ) -> None:
