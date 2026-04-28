@@ -483,8 +483,8 @@ def test_generate_image_determinism() -> None:
     img2 = generate_image(seed=42)
 
     # check identical
-    assert list(img1.getdata()) == list(
-        img2.getdata()
+    assert list(img1.get_flattened_data()) == list(
+        img2.get_flattened_data()
     ), "Images with the same seed should be identical."
 
 
