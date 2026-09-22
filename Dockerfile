@@ -16,7 +16,7 @@ USER ${NB_USER}
 WORKDIR "${HOME}"
 
 # test base image
-FROM python:3.11 AS testing
+FROM ghcr.io/diogenesanalytics/python-testing:master AS testing
 
 # define the build arguments
 ARG DCKRSRC
@@ -43,10 +43,11 @@ RUN git config --global --add safe.directory '*'
 # Install Jekyll (no need for Bundler or a Gemfile)
 RUN gem install jekyll -v 4.3.3
 
-# download and install Google Chrome (modern keyrings-based method)
+# download and install Google Chrome
 RUN mkdir -p /etc/apt/keyrings \
-    && wget -qO /etc/apt/keyrings/google-linux-signing-key.gpg https://dl.google.com/linux/linux_signing_key.pub \
-    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    && wget -qO- https://dl.google.com/linux/linux_signing_key.pub \
+       | gpg --dearmor -o /etc/apt/keyrings/google-linux-signing-key.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-linux-signing-key.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
        > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends google-chrome-stable \
@@ -59,9 +60,7 @@ WORKDIR ${DCKRSRC}
 COPY . .
 
 # install poetry deps (THIS replaces requirements.txt)
-RUN pip install --no-cache-dir poetry \
-    && poetry config virtualenvs.create false \
-    && poetry install --with utils,dev --no-root
+RUN poetry install --with utils,dev --no-root
 
 # get chromedriver (sbase installed by requirements.txt)
 RUN sbase install chromedriver
