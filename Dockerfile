@@ -60,7 +60,7 @@ WORKDIR ${DCKRSRC}
 COPY . .
 
 # install poetry deps (THIS replaces requirements.txt)
-RUN poetry install --with utils,dev --no-root
+RUN poetry install --with utils,dev --no-root -vvv
 
 # get chromedriver (sbase installed by requirements.txt)
 RUN sbase install chromedriver
