@@ -1277,7 +1277,7 @@ sgfmill = ">=1.1.1"
 type = "git"
 url = "https://github.com/DiogenesAnalytics/games.git"
 reference = "HEAD"
-resolved_reference = "2db863da9e419e5c0418b32dfd70bedf4cad0132"
+resolved_reference = "fa73aa035a48e4984e4dee9e460477b173baa300"
 
 [[package]]
 name = "h11"
