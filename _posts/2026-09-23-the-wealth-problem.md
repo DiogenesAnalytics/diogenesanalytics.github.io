@@ -331,7 +331,7 @@ The important point is that these are descriptions of **resource transitions**, 
 Consider the transformation:
 
 $$
-\$100{,}000\text{ cash}\rightarrow \$100{,}000\text{ land}.
+\textdollar100{,}000\text{ cash}\rightarrow \textdollar100{,}000\text{ land}.
 $$
 
 The resource controlled by the agent has changed. But the transition alone does not establish whether the agent has more or less wealth.
@@ -703,28 +703,28 @@ $$
 
 These conditions provide a way to distinguish growth, preservation, and decline under the chosen monetary valuation. But they also reveal an important distinction: the change in a collection of resources is not necessarily the same as the change in the wealth represented by that collection.
 
-Consider an agent who exchanges $100{,}000$ in cash for a parcel of land.
+Consider an agent who exchanges $\textdollar100{,}000$ in cash for a parcel of land.
 
 The resource transition is:
 
 $$
-\$100{,}000\text{ cash}
+\textdollar100{,}000\text{ cash}
 \rightarrow
 \text{land}.
 $$
 
 The collection of resources has changed. The agent no longer holds the original cash and instead controls a different wealth resource.
 
-Suppose, however, that the land is equivalent to $100{,}000$ in monetary wealth under the same reference conditions. Then:
+Suppose, however, that the land is equivalent to $\textdollar100{,}000$ in monetary wealth under the same reference conditions. Then:
 
 $$
-M(W_t\mid P_m)=\$100{,}000
+M(W_t\mid P_m)=\textdollar100{,}000
 $$
 
 and:
 
 $$
-M(W_{t+1}\mid P_m)=\$100{,}000.
+M(W_{t+1}\mid P_m)=\textdollar100{,}000.
 $$
 
 The composition of wealth has changed, but its measured quantity has not.
@@ -958,9 +958,9 @@ The next step is to examine the limitations of wealth maximization as a decision
 
 Wealth maximization provides a clear objective, but its scope is limited. It evaluates the consequences of an action according to the measured wealth of the resulting collection of resources. It does not necessarily account for every consequence that matters to the agent.
 
-Consider an agent that owns a property and has $\$20{,}000$ in available cash. The property requires a repair costing $\$5{,}000$. The agent can either perform the repair now or postpone it.
+Consider an agent that owns a property and has $\textdollar20{,}000$ in available cash. The property requires a repair costing $\$5{,}000$. The agent can either perform the repair now or postpone it.
 
-Let $W_t$ represent the agent's current wealth collection. If the agent performs the repair, its cash decreases by $\$5{,}000$, but the repair may preserve the property's value and prevent further deterioration. If the agent postpones the repair, it retains the cash for now, but the property's condition may deteriorate, eventually requiring a more expensive repair.
+Let $W_t$ represent the agent's current wealth collection. If the agent performs the repair, its cash decreases by $\textdollar5{,}000$, but the repair may preserve the property's value and prevent further deterioration. If the agent postpones the repair, it retains the cash for now, but the property's condition may deteriorate, eventually requiring a more expensive repair.
 
 The immediate cash consequences are clear:
 
@@ -1034,7 +1034,7 @@ The immediate problem is therefore to establish what wealth maximization leaves 
 
 Maximizing measured wealth does not, by itself, establish how an agent should manage the possibility of loss. An action that offers greater growth may also expose the agent to losses that diminish its existing wealth or threaten its ability to pursue future objectives.
 
-Consider two agents facing the same potential loss. The first holds $\$100{,}000$ in wealth, while the second holds $\$12{,}000$. Both suffer a loss of $\$10{,}000$, leaving them with $\$90{,}000$ and $\$2{,}000$, respectively.
+Consider two agents facing the same potential loss. The first holds $\textdollar100{,}000$ in wealth, while the second holds $\textdollar12{,}000$. Both suffer a loss of $\textdollar10{,}000$, leaving them with $\textdollar90{,}000$ and $\textdollar2{,}000$, respectively.
 
 Let $M(W\mid P_m)$ denote the measured wealth of collection $W$ under the common market reference conditions $P_m$. The change in measured wealth is:
 
@@ -1046,22 +1046,22 @@ $$
 For both agents:
 
 $$
-\Delta M_t=-\$10{,}000.
+\Delta M_t=-\textdollar10{,}000.
 $$
 
 The relative losses, however, differ:
 
 $$
-\frac{\$10{,}000}{\$100{,}000}=10\%
+\frac{\textdollar10{,}000}{\textdollar100{,}000}=10\%
 $$
 
 and
 
 $$
-\frac{\$10{,}000}{\$12{,}000}\approx83.3\%.
+\frac{\textdollar10{,}000}{\textdollar12{,}000}\approx83.3\%.
 $$
 
-For both agents, the monetary loss is identical. Its consequences, however, depend on their positions. If the second agent must pay an obligation of $\$5{,}000$, its remaining wealth of $\$2{,}000$ may be insufficient to meet that obligation, whereas the first agent may retain ample resources.
+For both agents, the monetary loss is identical. Its consequences, however, depend on their positions. If the second agent must pay an obligation of $\textdollar5{,}000$, its remaining wealth of $\textdollar2{,}000$ may be insufficient to meet that obligation, whereas the first agent may retain ample resources.
 
 The same loss can therefore produce different consequences depending on the wealth remaining, the agent's obligations, and the actions still available to it.
 
@@ -1101,7 +1101,7 @@ The agent must therefore consider not only the wealth it controls and the risks 
 
 ## Liquidity and the Ability to Act
 
-Equal measured wealth does not imply equal ability to act. An agent holding $\$50{,}000$ in cash and another holding a property worth $\$50{,}000$ may have equivalent measured wealth but different abilities to meet immediate obligations or pursue time-sensitive opportunities.
+Equal measured wealth does not imply equal ability to act. An agent holding $\textdollar50{,}000$ in cash and another holding a property worth $\textdollar50{,}000$ may have equivalent measured wealth but different abilities to meet immediate obligations or pursue time-sensitive opportunities.
 
 $$
 M(W_t^{(1)}\mid P_m) = M(W_t^{(2)}\mid P_m)
