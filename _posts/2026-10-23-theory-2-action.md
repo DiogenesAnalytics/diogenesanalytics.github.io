@@ -46,16 +46,13 @@ $$
 The available actions include theoretical development, information acquisition, and implementation. Let
 
 $$
-\mathcal{A}(P)
-=
-\mathcal{A}_{T}(P)
-\cup
-\mathcal{A}_{I}(P)
-\cup
-\mathcal{A}_{X}(P)
+\mathcal{A}(P) = \mathcal{A}_{T}(P) \cup \mathcal{A}_{I}(P) \cup \mathcal{A}_{X}(P)
 $$
 
-where $\mathcal{A}_{T}$ denotes theoretical development, $\mathcal{A}_{I}$ information acquisition, and $\mathcal{A}_{X}$ implementation.
+where:
++ $\mathcal{A}_{T}$ denotes theoretical development, 
++ $\mathcal{A}_{I}$ information acquisition and,
++ $\mathcal{A}_{X}$ implementation.
 
 These categories distinguish the means of changing position, not whether position changes. Each action transforms the position, potentially altering the agent's knowledge, reasoning capabilities, available actions, and subsequent transitions.
 
